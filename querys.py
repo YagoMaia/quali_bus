@@ -1,2 +1,0 @@
-class Queries:
-    pass
