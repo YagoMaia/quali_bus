@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
+arquivos/mapas/*
+arquivos/shapefiles/*
+arquivos/contorno/*
 
 # C extensions
 *.so
