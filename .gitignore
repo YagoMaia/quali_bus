@@ -1,3 +1,9 @@
+app/
+arquivos/
+imagens/
+moc_bus/
+planilhas/
+
 planilhas/arquivo_combinado.csv
 
 # Byte-compiled / optimized / DLL files
