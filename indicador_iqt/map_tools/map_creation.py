@@ -1,20 +1,23 @@
-import os
-import fiona
+# import os
+# import fiona
 import geopandas as gpd
-import pandas as pd
+# import pandas as pdw
 import folium
-from .data_loader_layers import load_routes, load_neighborhoods
-from .layers import add_map_layers, add_line_to_map, add_line_to_map_sem_grupo
-from .styles import get_legend_html
+import geopandas as gpd
+from .data_loader_layers import load_neighborhoods
+from .layers import add_line_to_map_sem_grupo
+# from .styles import get_legend_html
 
 def create_map():
     
     pass
 
-def initialize_map(path_city, path_routes) -> folium.Map:
+def initialize_map(gdf_city : gpd.GeoDataFrame):
     # gdf_routes = load_routes(path_routes)
-    gdf_city = load_neighborhoods(path_city)
-    
+    # gdf_city = load_neighborhoods(path_city)
+    if gdf_city.crs.is_geographic:
+        gdf_city = gdf_city.to_crs(epsg=3857)
+    # gdf_city.to_crs(epsg=3857)
     # Define centro do mapa
     map_center = [gdf_city.geometry.centroid.y.mean(), gdf_city.geometry.centroid.x.mean()]
     map_routes = folium.Map(location=map_center, zoom_start=12, tiles='CartoDB Voyager')

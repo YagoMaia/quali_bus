@@ -8,6 +8,13 @@ class Indicadores:
         'indicador': ['Pontualidade – cumprir horários', 'Porcentagem das vias pavimentadas', 'Distância entre pontos', 'Integração municipal do sistema de transporte', 'Frequência de atendimento', 'Abrangência da rede – atender a cidade', 'Cumprimento dos itinerários', 'Treinamento e capacitação dos motoristas', 'Existência Sistema de informação pela internet', 'Valor da Tarifa '],
         }
         
+    def calcula_iqt(self, linha):
+        valores_indicadores = linha[1:]
+        soma_ponderada = sum(p * w for p, w in zip(valores_indicadores, self.indicadores_prioridades['prioridade']))
+        desvio_padrao_pessoas = np.std(self.indicadores_prioridades['prioridade'])
+        iqt = soma_ponderada / (desvio_padrao_pessoas * np.len(self.indicadores_prioridades['prioridade']))
+        return iqt
+    
     def pontualidade_pontuacao(self, pontualidade):
         if 0.95 <= pontualidade:
             return 3
@@ -77,12 +84,6 @@ class Indicadores:
         else:
             return 0
         
-    def calcula_iqt(self, linha):
-        valores_indicadores = linha[1:]
-        soma_ponderada = sum(p * w for p, w in zip(valores_indicadores, self.indicadores_prioridades['prioridade']))
-        desvio_padrao_pessoas = np.std(self.indicadores_prioridades['prioridade'])
-        iqt = soma_ponderada / (desvio_padrao_pessoas * np.len(self.indicadores_prioridades['prioridade']))
-        return iqt
     
     def classificacao_iqt(self, iqt):
         if iqt >= 3.0:
