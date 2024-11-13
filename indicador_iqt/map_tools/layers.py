@@ -3,6 +3,8 @@ import fiona
 import geopandas as gpd
 import pandas as pd
 from ..utils.colors import color_iqt
+from shapely import wkt
+from shapely.geometry import LineString
 
 def load_layers_lines(path_lines: str) -> gpd.GeoDataFrame:
     """
@@ -96,7 +98,7 @@ def calculate_distances_2(gdf_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     2. Calcula as distâncias
     3. Retorna o GeoDataFrame na projeção WGS84
     """
-    gdf_lines = gdf_lines.to_crs(epsg=3857)
+    gdf_lines = gdf_lines.to_crs(3857)
     gdf_lines['distancia_metros'] = gdf_lines.length
     gdf_lines['distancia_km'] = gdf_lines['distancia_metros'] / 1000
     return gdf_lines.to_crs(4326)
@@ -124,15 +126,15 @@ def add_line_to_map(line: gpd.GeoSeries, map_routes: folium.Map, group: folium.F
     -----
     A cor da linha é determinada pela função color_iqt com base no valor do IQT.
     """
-    geometry = line['geometry']
-    tooltip_line = line['Name']
-    color = color_iqt(line['iqt'])
+    geometry = wkt.loads(line.geometry)
+    # tooltip_line = line['linha']
+    color = color_iqt(line.iqt)
     folium.PolyLine(
         locations=[(lat, lon) for lon, lat in zip(geometry.xy[0], geometry.xy[1])],
         color=color,
         weight=2.5,
         opacity=1,
-        tooltip=tooltip_line
+        tooltip=line.linha
     ).add_to(group).add_to(map_routes)
 
 def add_line_to_map_no_group(line: gpd.GeoSeries, map_routes: folium.Map) -> None:
@@ -145,7 +147,7 @@ def add_line_to_map_no_group(line: gpd.GeoSeries, map_routes: folium.Map) -> Non
         Série do GeoPandas contendo a geometria da linha e seus atributos.
         Deve conter as seguintes colunas:
         - 'geometry': geometria do tipo LineString
-        - 'Name': nome da linha para o tooltip
+        - 'linha': nome da linha para o tooltip
         - 'iqt': índice de qualidade para determinar a cor
         
     map_routes : folium.Map
@@ -156,13 +158,22 @@ def add_line_to_map_no_group(line: gpd.GeoSeries, map_routes: folium.Map) -> Non
     Similar a add_line_to_map, mas adiciona a linha diretamente ao mapa
     sem usar grupos. A linha terá uma espessura maior (weight=3).
     """
-    geometry = line['geometry']
-    tooltip_line = line['Name']
-    color = color_iqt(line['iqt'])
-    folium.PolyLine(
-        locations=[(lat, lon) for lon, lat in zip(geometry.xy[0], geometry.xy[1])],
-        color=color,
-        weight=3,
-        opacity=1,
-        tooltip=tooltip_line
-    ).add_to(map_routes)
+    # Extraindo a geometria, tooltip e cor
+    geometry = wkt.loads(line.geometry)
+    # tooltip_line = line['linha']
+    color = color_iqt(line.iqt)
+    
+    # Verificando se a geometria é um LineString
+    if isinstance(geometry, LineString):
+        # Extraindo as coordenadas para o PolyLine
+        locations = [(lat, lon) for lon, lat, *rest in geometry.coords]
+        # Adicionando a linha ao mapa com Folium
+        folium.PolyLine(
+            locations=locations,
+            color=color,
+            weight=3,
+            opacity=1,
+            tooltip=line.linha
+        ).add_to(map_routes)
+    else:
+        raise TypeError("A geometria fornecida não é do tipo LineString.")

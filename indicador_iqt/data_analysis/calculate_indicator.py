@@ -1,6 +1,10 @@
 import numpy as np
+import pandas as pd
+import geopandas as gpd
+from .classificator import IndicadoresClassificator
+from ..utils.colors import color_iqt
 
-class Indicadores:
+class IndicadoresCalculator:
     """
     Classe para cálculo e avaliação de indicadores de qualidade do transporte público.
     
@@ -17,19 +21,55 @@ class Indicadores:
         - 'indicador': Lista com descrições dos indicadores
     """
     
-    def __init__(self):
+    def __init__(self, df_linha : pd.DataFrame):
         """
         Inicializa a classe com os valores predefinidos dos indicadores e suas prioridades.
         """
+        self.dados_linhas = self.load_line_data(df_linha)
         self.indicadores_prioridades = {
-            'nomeclatura': ['I4', 'I1', 'I2', 'I3', 'I5', 'I7', 'I6', 'I8', 'I9', 'I10'],
-            'prioridade': [0.2269, 0.1526, 0.1121, 0.0997, 0.0992, 0.0954, 0.0831, 0.0756, 0.0277, 0.0277],
-            'indicador': ['Pontualidade – cumprir horários', 'Porcentagem das vias pavimentadas', 
-                         'Distância entre pontos', 'Integração municipal do sistema de transporte', 
-                         'Frequência de atendimento', 'Abrangência da rede – atender a cidade', 
-                         'Cumprimento dos itinerários', 'Treinamento e capacitação dos motoristas', 
-                         'Existência Sistema de informação pela internet', 'Valor da Tarifa '],
+            'nomeclatura': ['I1', 'I2', 'I3', 'I4', 'I5', 'I6', 'I7', 'I8', 'I9', 'I10'],
+            'prioridade': [0.1526, 0.1121, 0.0997, 0.2269, 0.0992, 0.0831, 0.0954, 0.0756, 0.0277, 0.0277],
+            'indicador': [
+                'Porcentagem das vias pavimentadas', #* OK
+                'Distância entre pontos', #? Pegar média dos pontos?
+                'Integração municipal do sistema de transporte', #* OK
+                'Pontualidade – cumprir horários', #* OK
+                'Frequência de atendimento', #* OK
+                'Cumprimento dos itinerários', #* OK
+                'Abrangência da rede – atender a cidade', #! Nem ideia
+                'Treinamento e capacitação dos motoristas', #* OK
+                'Existência Sistema de informação pela internet', #* OK
+                'Valor da Tarifa ' #* OK
+            ]
         }
+
+    def cumprimento_itinerario(self):
+        colunas_desnecessarias = ["'Veiculo Planejado'", 'Veiculo Real', 'Motorista', 'Vel. Media Km', 'Temp.Ponto', 'Passageiro', 'Status da Viagem', 'Desc. Status da Viagem','Unnamed: 26', 'Unnamed: 25', 'Unnamed: 24', 'Empresa', 'Tabela', 'Viagem Editada']
+
+        df = df.drop(colunas_desnecessarias, axis=1)
+        df[['linha', 'sentido']] = df['Trajeto'].str.extract(r'(\d+)\s*-\s*.*\((ida|volta)\)')
+        df = df.drop('Trajeto', axis=1)
+        df.replace("-", pd.NA, inplace=True)
+        # df['com_horario'] = df[['Chegada ao ponto', 'Partida Real', 'Chegada Real']].notna().any(axis=1)
+        self.cumprimento = df.groupby(['linha', 'sentido'])['KM Executado'].mean().reset_index()
+
+        # # Renomeia as colunas para maior clareza
+        # self.cumprimento.columns = ['sem_horario', 'com_horario']
+        self.dados_linhas['distancia_km'] = self.dados_linhas['geometry'].length / 1000
+        # # Calcula a proporção de viagens sem horário sobre o total de viagens para cada grupo
+        self.cumprimento['cumprimento_itinerario'] = self.cumprimento['KM Executado'] / self.cumprimento['distancia_km']
+        # self.cumprimento.drop(['sem_horario', 'com_horario'])
+        self.dados_linhas = pd.merge(self.dados_linhas, self.cumprimento, on=['linha', 'sentido'])
+        
+    
+    def load_line_data(self, df_line: pd.DataFrame) -> gpd.GeoDataFrame:
+        """
+        Carrega os dados de frequência de atendimento a partir de um DataFrame.
+        """
+        try:
+            return gpd.GeoDataFrame(df_line) # Linha, Sentido, Geometria, (Km), Via Pavimentada, Integração, Treinamento, Existência informação internet, Valor Tarifa
+        except:
+            return None
 
     def calcula_iqt(self, linha: list) -> float:
         """
@@ -52,224 +92,96 @@ class Indicadores:
         O cálculo é feito através da soma ponderada dos indicadores dividida pelo
         produto do desvio padrão das prioridades e quantidade de indicadores.
         """
-        valores_indicadores = linha[1:]
-        soma_ponderada = sum(p * w for p, w in zip(valores_indicadores, self.indicadores_prioridades['prioridade']))
-        desvio_padrao_pessoas = np.std(self.indicadores_prioridades['prioridade'])
-        iqt = soma_ponderada / (desvio_padrao_pessoas * np.len(self.indicadores_prioridades['prioridade']))
-        return iqt
+        try:
+            # Multiplicando indicadores pelo peso de cada um
+            # valores_indicadores = linha
+            prioridades = self.indicadores_prioridades['prioridade']
+            soma_ponderada = np.dot(linha, prioridades)
 
-    def pontualidade_pontuacao(self, pontualidade: float) -> int:
+            # Calculando o desvio padrão das prioridades
+            desvio_padrao_prioridades = np.std(prioridades)
+            
+            # Calculando o IQT
+            iqt = soma_ponderada / (desvio_padrao_prioridades * len(prioridades))
+            return iqt
+        
+        except Exception as e:
+            print(f"Erro ao calcular IQT: {e}")
+            return 0.0
+
+    def pontualidade(self, df: pd.DataFrame) -> int:
         """
         Calcula a pontuação para o indicador de pontualidade.
-
-        Parameters
-        ----------
-        pontualidade : float
-            Valor entre 0 e 1 representando a taxa de pontualidade.
-
-        Returns
-        -------
-        int
-            Pontuação atribuída:
-            - 3: pontualidade >= 0.95
-            - 2: 0.90 <= pontualidade < 0.95
-            - 1: 0.80 <= pontualidade < 0.90
-            - 0: pontualidade < 0.80
         """
-        if 0.95 <= pontualidade:
-            return 3
-        elif 0.90 <= pontualidade < 0.95:
-            return 2
-        elif 0.80 <= pontualidade < 0.90:
-            return 1
-        else:
-            return 0
+        colunas_desnecessarias = ["'Veiculo Planejado'", 'Veiculo Real', 'Motorista', 'Vel. Media Km', 'Temp.Ponto', 'Passageiro', 'Status da Viagem', 'Desc. Status da Viagem','Unnamed: 26', 'Unnamed: 25', 'Unnamed: 24', 'Empresa', 'Tabela', 'Viagem Editada']
 
-    def porcentagem_vias_pavimentadas(self, porcentagem: float) -> int:
+        self.pontualidade = df
+
+        self.pontualidade = self.pontualidade.drop(colunas_desnecessarias, axis=1)
+        self.pontualidade[['linha', 'sentido']] = self.pontualidade['Trajeto'].str.extract(r'(\d+)\s*-\s*.*\((ida|volta)\)')
+        self.pontualidade['sentido'] = self.pontualidade['sentido'].replace({'ida': 'IDA', 'volta': 'VOLTA'})
+        self.pontualidade = self.pontualidade.drop('Trajeto', axis=1)
+        self.pontualidade.replace("-", pd.NA, inplace=True)
+        self.pontualidade['com_horario'] = self.pontualidade[['Chegada ao ponto', 'Partida Real', 'Chegada Real']].notna().any(axis=1)
+        self.pontualidade = self.pontualidade.groupby(['linha', 'sentido'])['com_horario'].value_counts(normalize=False).unstack(fill_value=0)
+
+        # # Renomeia as colunas para maior clareza
+        self.pontualidade.columns = ['sem_horario', 'com_horario']
+
+        # # Calcula a proporção de viagens sem horário sobre o total de viagens para cada grupo
+        self.pontualidade['pontualidade'] = self.pontualidade['com_horario'] / (self.pontualidade['sem_horario'] + self.pontualidade['com_horario'])
+        self.pontualidade = self.pontualidade.drop(['sem_horario', 'com_horario'], axis=1)
+        self.dados_linhas = pd.merge(self.dados_linhas, self.pontualidade, on=['linha', 'sentido'])
+        self.dados_linhas = gpd.GeoDataFrame(self.dados_linhas)
+
+    def frequencia_atendimento(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calcula o tempo médio de operação por rota (linha).
+
+        Args:
+            df (pd.DataFrame): DataFrame contendo a coluna 'linha' para identificar a rota e 'duracao' para a duração das viagens.
+
+        Returns:
+            pd.DataFrame: DataFrame com o tempo médio de operação por rota.
+
+        Example:
+            >>> tempo_medio_operacao(df)
+            linha sentido duracao
+            101    IDA    45.0
+            102    VOLTA  37.5
+            103    IDA    50.2
         """
-        Calcula a pontuação para o indicador de vias pavimentadas.
+        df['hsstart'] = pd.to_datetime(df['hsstart'], format="%H:%M:%S")
+        df['hsstop'] = pd.to_datetime(df['hsstop'], format="%H:%M:%S")
 
-        Parameters
-        ----------
-        porcentagem : float
-            Valor entre 0 e 1 representando a porcentagem de vias pavimentadas.
+        # Calcular a duração como a diferença entre hsstop e hsstart
+        df['frequencia_atendimento'] = df['hsstop'] - df['hsstart']
+        df['frequencia_atendimento'] = df['frequencia_atendimento'].apply(lambda x: int(x.total_seconds() / 60))
 
-        Returns
-        -------
-        int
-            Pontuação atribuída:
-            - 3: porcentagem >= 1
-            - 2: 0.95 <= porcentagem < 0.99
-            - 1: 0.85 <= porcentagem < 0.95
-            - 0: porcentagem < 0.85
-        """
-        if 1 <= porcentagem:
-            return 3
-        elif 0.95 <= porcentagem < 0.99:
-            return 2
-        elif 0.85 <= porcentagem < 0.95:
-            return 1
-        else:
-            return 0
+        df['datai'] = pd.to_datetime(df['datai'], format="%d/%m/%Y")
+        df['dataf'] = pd.to_datetime(df['dataf'], format="%d/%m/%Y")
+        
+        df['sentido'] = df['sentido'].replace({0: 'IDA', 1: 'VOLTA'})
 
-    def distancia_pontos(self, distancia: float) -> int:
-        """
-        Calcula a pontuação para o indicador de distância entre pontos.
-
-        Parameters
-        ----------
-        distancia : float
-            Distância em metros entre os pontos de parada.
-
-        Returns
-        -------
-        int
-            Pontuação atribuída:
-            - 3: distancia >= 250
-            - 2: 250 <= distancia < 400
-            - 1: 400 <= distancia < 500
-            - 0: distancia >= 500 ou distancia < 250
-        """
-        if 250 <= distancia:
-            return 3
-        elif 250 <= distancia < 400:
-            return 2
-        elif 400 <= distancia < 500:
-            return 1
-        else:
-            return 0
-
-    def integracao_municipal(self, integracao: float) -> int:
-        """
-        Calcula a pontuação para o indicador de integração municipal.
-
-        Parameters
-        ----------
-        integracao : float
-            Valor entre 0 e 1 representando o nível de integração municipal.
-
-        Returns
-        -------
-        int
-            Pontuação atribuída:
-            - 3: integracao >= 1
-            - 2: 0.95 <= integracao < 1
-            - 1: 0.85 <= integracao < 0.95
-            - 0: integracao < 0.85
-        """
-        if 1 <= integracao:
-            return 3
-        elif 0.95 <= integracao < 1:
-            return 2
-        elif 0.85 <= integracao < 0.95:
-            return 1
-        else:
-            return 0
-
-    def frequencia_atendimento(self, frequencia: float) -> int:
-        """
-        Calcula a pontuação para o indicador de frequência de atendimento.
-
-        Parameters
-        ----------
-        frequencia : float
-            Tempo em minutos entre atendimentos.
-
-        Returns
-        -------
-        int
-            Pontuação atribuída:
-            - 3: frequencia <= 10
-            - 2: 10 < frequencia <= 15
-            - 1: 15 < frequencia <= 30
-            - 0: frequencia > 30
-        """
-        if frequencia <= 10:
-            return 3
-        elif frequencia <= 15:
-            return 2
-        elif 15 < frequencia <= 30:
-            return 1
-        else:
-            return 0
-
-    def cumprimento_etinerarios(self, etinerario: float) -> int:
-        """
-        Calcula a pontuação para o indicador de cumprimento de itinerários.
-
-        Parameters
-        ----------
-        etinerario : float
-            Valor entre 0 e 1 representando a taxa de cumprimento dos itinerários.
-
-        Returns
-        -------
-        int
-            Pontuação atribuída:
-            - 3: etinerario >= 1
-            - 2: 0.8 <= etinerario <= 0.9
-            - 1: 0.5 <= etinerario <= 0.7
-            - 0: etinerario < 0.5
-        """
-        if 1 <= etinerario:
-            return 3
-        elif 0.9 <= etinerario <= 0.8:
-            return 2
-        elif 0.7 <= etinerario <= 0.5:
-            return 1
-        else:
-            return 0
-
-    def treinamento_capacitacao(self, treinamento: float) -> int:
-        """
-        Calcula a pontuação para o indicador de treinamento e capacitação.
-
-        Parameters
-        ----------
-        treinamento : float
-            Valor entre 0 e 1 representando o nível de treinamento dos motoristas.
-
-        Returns
-        -------
-        int
-            Pontuação atribuída:
-            - 3: treinamento >= 1
-            - 2: 0.95 <= treinamento <= 0.98
-            - 1: 0.90 <= treinamento <= 0.95
-            - 0: treinamento < 0.90
-        """
-        if 1 <= treinamento:
-            return 3
-        elif 0.98 <= treinamento <= 0.95:
-            return 2
-        elif 0.90 <= treinamento <= 0.95:
-            return 1
-        else:
-            return 0
-
-    def classificacao_iqt(self, iqt: float) -> str:
-        """
-        Classifica o IQT em categorias qualitativas.
-
-        Parameters
-        ----------
-        iqt : float
-            Valor do Índice de Qualidade do Transporte (IQT).
-
-        Returns
-        -------
-        str
-            Classificação do IQT:
-            - 'Excelente': iqt >= 3.0
-            - 'Bom': 2.0 <= iqt < 3.0
-            - 'Suficiente': 1.0 <= iqt < 2.0
-            - 'Insuficiente': iqt < 1.0
-        """
-        if iqt >= 3.0:
-            return 'Excelente'
-        elif 2 <= iqt < 3.0:
-            return 'Bom'
-        elif 1.0 <= iqt < 2:
-            return 'Suficiente'
-        else:
-            return 'Insuficiente'
+        self.frequencia_atendimento = df.groupby(['linha', 'sentido'])['frequencia_atendimento'].mean().reset_index()
+        
+        self.dados_linhas = pd.merge(self.dados_linhas, self.frequencia_atendimento, on=['linha', 'sentido'])
+        self.dados_linhas = gpd.GeoDataFrame(self.dados_linhas)
+        
+    def classificar_linha(self):
+        classificador = IndicadoresClassificator()
+        self.classificao_linhas = classificador.classificar_linhas(self.dados_linhas)
+    
+    
+    def processar_iqt(self):
+        valores_iqt, cores = [], []
+        for index, row in self.classificao_linhas.iterrows():
+            # Excluir as colunas 'linha' e 'sentido' e converter para lista
+            valores_indicadores = row.iloc[2:].tolist()  # Pegando valores de 'I1', 'I3', 'I4', etc.
+            
+            # Chamar a função de cálculo do IQT passando os valores da linha
+            iqt = self.calcula_iqt(valores_indicadores)
+            cor = color_iqt(iqt)
+            valores_iqt.append(iqt)
+            cores.append(cor)
+        self.dados_linhas['iqt'] = valores_iqt
+        self.dados_linhas['cor'] = cores

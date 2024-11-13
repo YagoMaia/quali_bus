@@ -75,7 +75,7 @@ def classification_routes(map_routes: folium.Map, gdf_routes: gpd.GeoDataFrame) 
         GeoDataFrame contendo as rotas a serem adicionadas.
         Deve conter as seguintes colunas:
         - geometry: geometria do tipo LineString
-        - Name: nome da rota para o tooltip
+        - linha: nome da rota para o tooltip
         - iqt: índice de qualidade para determinação da cor
         
     Returns
@@ -99,6 +99,7 @@ def classification_routes(map_routes: folium.Map, gdf_routes: gpd.GeoDataFrame) 
     >>> mapa_final = classification_routes(mapa, gdf_routes)
     >>> mapa_final.save('mapa_rotas.html')
     """
-    for line in gdf_routes.iter_rows():
+    for index, line in gdf_routes.iterrows():
+        # line_dict = line.to_dict()  # Converte a linha para um dicionário
         add_line_to_map_no_group(line, map_routes)
     return map_routes

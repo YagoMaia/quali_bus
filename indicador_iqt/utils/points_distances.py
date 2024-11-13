@@ -61,6 +61,9 @@ def calculate_distance(residencias: gpd.GeoDataFrame, pontos_onibus: gpd.GeoData
         >>> print(resultado)
         {'pontos': [0, 1], 'distancias': [0.000584, 0.000678]}
     """
+    residencias = residencias.to_crs(epsg=3857)
+    pontos_onibus = pontos_onibus.to_crs(epsg=3857)
+    
     coordinates_array_residencias = np.array(residencias[['Longitude', 'Latitude']])
     coordinates_array_pontos_onibus = np.array(pontos_onibus[['Longitude', 'Latitude']])
     
