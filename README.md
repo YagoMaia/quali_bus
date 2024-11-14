@@ -1,8 +1,8 @@
 # Indicador IQT
 
-Biblioteca para manipulação de arquivos geoespaciais e visualização de dados geográficos utilizando `folium`, `geopandas`, e outras bibliotecas em Python. Ideal para visualização de rotas, polígonos e dados de transporte em mapas interativos.
+Biblioteca Python para análise e classificação de indicadores de qualidade do transporte urbano, com foco em transporte coletivo. O `indicador_iqt` fornece ferramentas para processar e validar dados de transporte, aplicando classificações específicas de acordo com métricas de qualidade. A biblioteca permite trabalhar com dados de rotas, frequência, pontualidade e outros dados relevantes ao transporte público.
 
-## Índice
+<!-- ## Índice
 
 - [Instalação](#instalação)
 - [Funcionalidades](#funcionalidades)
@@ -13,80 +13,57 @@ Biblioteca para manipulação de arquivos geoespaciais e visualização de dados
 - [Exemplo de Uso](#exemplo-de-uso)
 - [Referências](#referências)
 
----
+--- -->
 
 ## Instalação
 
-Para instalar a biblioteca `map_tools`, basta clonar o repositório e instalar as dependências:
+Para instalar a biblioteca `indicador_iqt`, basta clonar o repositório e instalar as dependências:
 
 ```bash
-git clone <URL-do-repositório>
-cd map_tools
+git clone https://github.com/YagoMaia/indicador_iqt
+cd indicador_iqt
 pip install -r requirements.txt
 ```
 
-Certifique-se de que as bibliotecas necessárias como `folium`, `geopandas`, ``pandas`, e `fiona` estejam corretamente instaladas.
+Certifique-se de que as bibliotecas necessárias como `folium`, `geopandas`, `geopandas`, `pandas`, e `fiona` estejam corretamente instaladas.
 
 ## Funcionalidades
 
-### Carregar Arquivos Geoespaciais
+A biblioteca `indicador_iqt` foi projetada para auxiliar na análise e visualização de dados de transporte urbano. As principais funcionalidades incluem:
 
-A biblioteca suporta a leitura de arquivos KML e KMZ. Para trabalhar com arquivos KMZ, eles são convertidos automaticamente para KML:
+### Classificação de Indicadores de Qualidade do Transporte (IQT):
 
-```python
-from map_tools import load_geospatial_data
+- Classificação de rotas e dados de transporte com base em métricas de qualidade predefinidas.
+- Uso da classe `IndicadoresClassificator` para categorizar rotas e dados de transporte.
 
-gdf = load_geospatial_data("caminho_para_arquivo.kml", layer='Nome_da_Camada')
-```
+### Validação de DataFrames:
 
-### Filtrar e Manipular Dados Geoespaciais
+- Funções de validação para verificar se os DataFrames possuem as colunas necessárias antes do processamento.
+- Funções específicas para validar `gdf_city`, `df_dados_linhas`, `df_frequencia`, e `df_pontualidade`, levantando erros se houver colunas ausentes.
 
-A map_tools permite aplicar filtros diretamente no GeoDataFrame, facilitando a segmentação dos dados:
+### Mapeamento de Rotas com Folium:
 
-```python
-filtered_data = filter_data(gdf, column='Name', value='ativo')
-```
+- Criação de mapas interativos utilizando a biblioteca Folium.
+- Funções para adicionar rotas, grupos e outros dados geoespaciais ao mapa.
 
-### Gerar Mapas Interativos
+### Manipulação de Dados GTFS:
 
-A biblioteca usa folium para gerar mapas interativos com funcionalidades personalizadas, incluindo a adição de layers e estilos:
+- Manipulação e análise de dados GTFS (General Transit Feed Specification) utilizando o modulo `gtfs_functions`.
 
-```python
-from map_tools import create_map
+## Pré-requisitos
 
-m = create_map(gdf, location=[-16.737, -43.8647], zoom_start=12)
-```
+Para utilizar esta biblioteca, é necessário ter os seguintes pacotes instalados:
 
-### Adicionar Linhas com Cores Personalizadas
+- `Pandas` para manipulação de dados
+- `Folium` para criação de mapas interativos
+- `Geopandas` para manipulação de dados geoespaciais
 
-Adiciona linhas de rotas ao mapa interativo, com opções de cor e opacidade para cada linha:
+## Contribuição
 
-```python
-from map_tools import add_line_to_map
+Sinta-se à vontade para contribuir para a biblioteca indicador_iqt. Para contribuir, faça um fork do repositório, crie uma branch para suas alterações e envie um pull request. Agradecemos suas sugestões e melhorias.
 
-add_line_to_map(map, 'Nome_da_Linha', geometry, color='#FF5733')
-```
-
-## Exemplos de uso
-
-Abaixo, um exemplo de uso da biblioteca para criar um mapa com dados de linhas de ônibus de uma cidade fictícia:
-
-```python
-from map_tools import load_geospatial_data, create_map, add_line_to_map, save_map
-
-# Carregar dados geoespaciais
-gdf = load_geospatial_data("caminho_para_arquivo.kml", layer='Camada_desejada')
-
-# Filtrar dados
-gdf_filtered = filter_data(gdf, column='Name', value='ativo')
-
-# Criar o mapa
-m = create_map(gdf_filtered, location=[-16.737, -43.8647], zoom_start=12)
-
-# Adicionar linhas de rota
-for index, row in gdf_filtered.iterrows():
-    add_line_to_map(m, row['Name'], row.geometry, color='blue')
-
-# Salvar o mapa
-save_map(m, "meu_mapa_interativo.html")
-```
+- Faça o fork do projeto
+- Crie uma branch com suas funcionalidades (`git checkout -b feature/NovaFuncionalidade`)
+- Commit suas alterações (`git commit -am 'Adiciona nova funcionalidade'`)
+- Envie para o branch (`git push origin feature/NovaFuncionalidade`)
+- Crie um novo Pull Request
