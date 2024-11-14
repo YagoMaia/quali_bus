@@ -180,8 +180,8 @@ def add_line_to_map_no_group(line: gpd.GeoSeries, map_routes: folium.Map) -> Non
     else:
         raise TypeError("A geometria fornecida não é do tipo LineString.")
     
-def group_sentido(sentido : str) -> folium.FeatureGroup:
-    return folium.FeatureGroup(name=sentido)
+# def group_sentido(sentido : str) -> folium.FeatureGroup:
+#     return folium.FeatureGroup(name=sentido)
 
-def group_iqt_classification(sentido : folium.FeatureGroup, iqt_classification : str) -> folium.plugins.FeatureGroupSubGroup:
-    return folium.plugins.FeatureGroupSubGroup(sentido, name=iqt_classification)
+# def group_iqt_classification(sentido : folium.FeatureGroup, iqt_classification : str) -> folium.plugins.FeatureGroupSubGroup:
+#     return folium.plugins.FeatureGroupSubGroup(sentido, name=iqt_classification)
