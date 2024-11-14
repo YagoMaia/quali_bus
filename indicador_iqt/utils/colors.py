@@ -1,3 +1,5 @@
+from random import randint
+
 class Colors:
     """
     Define um conjunto padrão de cores em formato hexadecimal para uso em visualizações.
@@ -71,3 +73,7 @@ def color_iqt(iqt: float) -> str:
         return Colors.RED
     else:
         return Colors.PINK
+    
+def randon_color() -> str:
+    cor = "#{:06x}".format(randint(0, 0xFFFFFF))
+    return cor

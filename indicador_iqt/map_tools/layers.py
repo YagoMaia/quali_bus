@@ -1,10 +1,12 @@
 import folium
+import folium.plugins
 import fiona
 import geopandas as gpd
 import pandas as pd
-from ..utils.colors import color_iqt
+from ..utils.colors import color_iqt, randon_color
 from shapely import wkt
 from shapely.geometry import LineString
+
 
 def load_layers_lines(path_lines: str) -> gpd.GeoDataFrame:
     """
@@ -103,7 +105,7 @@ def calculate_distances_2(gdf_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf_lines['distancia_km'] = gdf_lines['distancia_metros'] / 1000
     return gdf_lines.to_crs(4326)
 
-def add_line_to_map(line: gpd.GeoSeries, map_routes: folium.Map, group: folium.FeatureGroup) -> None:
+def add_line_to_map(line: gpd.GeoSeries, map_routes: folium.Map, group: folium.FeatureGroup, color : str = None) -> None:
     """
     Adiciona uma linha ao mapa Folium com grupo específico.
     
@@ -128,14 +130,14 @@ def add_line_to_map(line: gpd.GeoSeries, map_routes: folium.Map, group: folium.F
     """
     geometry = wkt.loads(line.geometry)
     # tooltip_line = line['linha']
-    color = color_iqt(line.iqt)
+    color = color if color else randon_color()
     folium.PolyLine(
-        locations=[(lat, lon) for lon, lat in zip(geometry.xy[0], geometry.xy[1])],
+        locations=[(lat, lon) for lon, lat, *rest in geometry.coords],
         color=color,
         weight=2.5,
         opacity=1,
         tooltip=line.linha
-    ).add_to(group).add_to(map_routes)
+    ).add_to(group)
 
 def add_line_to_map_no_group(line: gpd.GeoSeries, map_routes: folium.Map) -> None:
     """
@@ -177,3 +179,9 @@ def add_line_to_map_no_group(line: gpd.GeoSeries, map_routes: folium.Map) -> Non
         ).add_to(map_routes)
     else:
         raise TypeError("A geometria fornecida não é do tipo LineString.")
+    
+def group_sentido(sentido : str) -> folium.FeatureGroup:
+    return folium.FeatureGroup(name=sentido)
+
+def group_iqt_classification(sentido : folium.FeatureGroup, iqt_classification : str) -> folium.plugins.FeatureGroupSubGroup:
+    return folium.plugins.FeatureGroupSubGroup(sentido, name=iqt_classification)
