@@ -1,4 +1,3 @@
-import os
 import fiona
 import geopandas as gpd
 import pandas as pd

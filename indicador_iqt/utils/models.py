@@ -1,10 +1,5 @@
 import pandas as pd
-
-REQUIRED_COLUMNS = {
-    'Name': str,
-    'Latitude': float,
-    'Longitude': float
-}
+import geopandas as gpd
 
 def validate_dataframe(df: pd.DataFrame) -> bool:
     """
@@ -45,6 +40,13 @@ def validate_dataframe(df: pd.DataFrame) -> bool:
         >>> validate_dataframe(invalid_data)
         ValueError: DataFrame está faltando colunas: ['Latitude']
     """
+    
+    REQUIRED_COLUMNS = {
+    'Name': str,
+    'Latitude': float,
+    'Longitude': float
+    }
+    
     # Verifica se as colunas esperadas estão presentes
     missing_columns = [col for col in REQUIRED_COLUMNS if col not in df.columns]
     if missing_columns:
@@ -56,8 +58,6 @@ def validate_dataframe(df: pd.DataFrame) -> bool:
             raise ValueError(f"Coluna '{col}' deve ser do tipo {col_type}")
     
     return True
-
-import pandas as pd
 
 def validate_gdf_city(df: pd.DataFrame) -> bool:
     required_columns = [
@@ -72,7 +72,7 @@ def validate_gdf_city(df: pd.DataFrame) -> bool:
 
 def validate_df_dados_linhas(df: pd.DataFrame) -> bool:
     required_columns = [
-        'linha', 'sentido', 'geometry', 'via_pavimentada', 'integracao',
+        'linha', 'geometry', 'via_pavimentada', 'integracao',
         'treinamento_motorista', 'informacao_internet', 'valor_tarifa'
     ]
     missing_columns = [col for col in required_columns if col not in df.columns]
@@ -82,8 +82,8 @@ def validate_df_dados_linhas(df: pd.DataFrame) -> bool:
 
 def validate_df_frequencia(df: pd.DataFrame) -> bool:
     required_columns = [
-        'empresa', 'uds_id', 'hsstart', 'hsstop', 'datai', 'dataf', 'sentido',
-        'linha', 'carro', 'qtpsg', 'valor_jornada', 'nao_sei'
+        'hsstart', 'hsstop', 'datai', 'sentido',
+        'linha', 'qtpsg', 'valor_jornada'
     ]
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
@@ -92,15 +92,30 @@ def validate_df_frequencia(df: pd.DataFrame) -> bool:
 
 def validate_df_pontualidade(df: pd.DataFrame) -> bool:
     required_columns = [
-        'Data', 'Trajeto', 'Veiculo Planejado', 'Veiculo Real', 'Motorista',
+        'Data', 'Trajeto',
         'Chegada ao ponto', 'Partida Planejada', 'Partida Real', 'Diff Partida',
-        'HE', 'Chegada Planejada', 'Chegada Real', 'Diff Chegada',
-        'Tempo Viagem', 'KM Executado', 'Vel. Media Km', 'Temp.Ponto',
-        'Passageiro', 'I.P.K', 'Status da Viagem', 'Desc. Status da Viagem',
-        'Viagem Editada', 'Tabela', 'Empresa', 'Unnamed: 24', 'Unnamed: 25',
-        'Unnamed: 26'
+        'Chegada Planejada', 'Chegada Real', 'Diff Chegada',
+        'Tempo Viagem', 'KM Executado',
     ]
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         raise ValueError(f"df_pontualidade está faltando colunas: {missing_columns}")
+    return True
+
+def validate_residencias(gdf : gpd.GeoDataFrame) -> bool:
+    required_columns = [
+        'ID', 'Longitude', 'Latitude'
+    ]
+    missing_columns = [col for col in required_columns if col not in gdf.columns]
+    if missing_columns:
+        raise ValueError(f"gdf_residências está faltando colunas: {missing_columns}")
+    return True
+
+def validate_pontos_onibus(gdf : gpd.GeoDataFrame) -> bool:
+    required_columns = [
+        'ID', 'Longitude', 'Latitude'
+    ]
+    missing_columns = [col for col in required_columns if col not in gdf.columns]
+    if missing_columns:
+        raise ValueError(f"gdf_pontos_onibus está faltando colunas: {missing_columns}")
     return True

@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 class IndicadoresClassificator:
@@ -155,7 +154,7 @@ class IndicadoresClassificator:
         else:
             return 0
 
-    def cumprimento_etinerarios(self, etinerario: float) -> int:
+    def cumprimento_itinerarios(self, etinerario: float) -> int:
         """
         Calcula a pontuação para o indicador de cumprimento de itinerários.
 
@@ -220,7 +219,7 @@ class IndicadoresClassificator:
             case _:
                 return 0
             
-    def valor_tarrifa(self, informacao_tarifa : str) -> int:
+    def valor_tarifa(self, informacao_tarifa : str) -> int:
         match informacao_tarifa:
             case 'Não houve aumento da tarifa ':
                 return 3
@@ -260,7 +259,6 @@ class IndicadoresClassificator:
     def classificar_linhas(self, dados_linhas: pd.DataFrame) -> pd.DataFrame:
         classificacao = {
             'linha': [],
-            'sentido': [],
             'I1': [],
             'I2': [],
             'I3': [],
@@ -276,17 +274,16 @@ class IndicadoresClassificator:
         # Itera pelas linhas do DataFrame e calcula as pontuações
         for _, linha in dados_linhas.iterrows():
             classificacao['linha'].append(linha['linha'])
-            classificacao['sentido'].append(linha['sentido'])
             classificacao['I1'].append(self.porcentagem_vias_pavimentadas(linha['via_pavimentada']))
             classificacao['I2'].append(0)
             classificacao['I3'].append(self.integracao_municipal(linha['integracao']))
             classificacao['I4'].append(self.pontualidade_pontuacao(linha['pontualidade']))
             classificacao['I5'].append(self.frequencia_atendimento(linha['frequencia_atendimento']))
-            classificacao['I6'].append(0)
+            classificacao['I6'].append(self.cumprimento_itinerarios(linha['cumprimento_itinerario']))
             classificacao['I7'].append(0)
             classificacao['I8'].append(self.treinamento_capacitacao(linha['treinamento_motorista']))
             classificacao['I9'].append(self.informacao_internet(linha['informacao_internet']))
-            classificacao['I10'].append(0)
+            classificacao['I10'].append(self.valor_tarifa(linha['valor_tarifa']))
 
         # Converte o dicionário em DataFrame
         return pd.DataFrame(classificacao)
