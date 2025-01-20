@@ -1,5 +1,8 @@
 import numpy as np
 import geopandas as gpd
+# import numpy as np
+# from copy import deepcopy
+from shapely.geometry import LineString, Point
 
 def euclidean_distance(coordinates_array_pontos_onibus: np.ndarray, coord: np.ndarray) -> np.ndarray:
     """
@@ -75,3 +78,82 @@ def calculate_distance(residencias: gpd.GeoDataFrame, pontos_onibus: gpd.GeoData
         distancias_dados['distancias'].append(np.min(distancias))
     
     return distancias_dados
+
+#TODO: Decompor as coordenadas da linha (LineString)
+#TODO: Distanca euclidiana desses pontos para todos os pontos de onibus
+#TODO: Pegar o ponto mais proximo de cada ponto da linha
+
+class Vinculador_Pontos:
+    def __init__(self, coord_geral: np.array, coord_linha: np.array, coord_residencia : np.array, linha_ponto, nomes):
+        """
+        Classe para vincular pontos de ônibus a pontos mais próximos em uma linha.
+
+        Args:
+            coord_geral (np.array): Coordenadas gerais dos pontos de ônibus.
+            coord_linha (np.array): Coordenadas das linhas (LineString).
+            linha_ponto (dict): Dicionário para armazenar os pontos vinculados a cada linha.
+            nomes (list): Lista de nomes das linhas.
+        """
+        self.pontos_onibus = coord_geral
+        self.coordenadas_linhas = coord_linha
+        self.coordenadas_residencias = coord_residencia
+        self.lp = linha_ponto
+        self.nomes = nomes
+
+    def euclidean_distance(self, ponto):
+        """
+        Calcula a distância euclidiana entre um ponto e todos os pontos de ônibus.
+
+        Args:
+            ponto_linha (np.array): Coordenadas do ponto para ser calculado a distância.
+
+        Returns:
+            np.array: Distâncias euclidianas para todos os pontos de ônibus.
+        """
+        return np.sqrt(
+            np.sum(
+                np.square(ponto - self.pontos_onibus), axis=1
+            )
+        )
+
+    def decompose_linestring(self, linestring):
+        """
+        Decompõe um LineString em coordenadas individuais.
+
+        Args:
+            linestring (LineString): Objeto LineString.
+
+        Returns:
+            np.array: Coordenadas dos pontos da linha.
+        """
+        return np.array(linestring.coords)
+
+    def link_coords(self):
+        """
+        Vincula os pontos de ônibus aos pontos mais próximos em cada linha.
+
+        Returns:
+            dict: Dicionário contendo os pontos vinculados e suas linhas.
+        """
+        dados = {
+            'linha': [],
+            'ponto': []
+        }
+        for pontos_linha, nome in zip(self.coordenadas_linhas, self.nomes):
+            # Decompor LineString em coordenadas
+            if isinstance(pontos_linha, LineString):
+                pontos_linha = self.decompose_linestring(pontos_linha)
+
+            for ponto_linha in pontos_linha:
+                # Calcular distância euclidiana
+                distances = self.euclidean_distance(ponto_linha)
+                # Encontrar o ponto mais próximo
+                idx_min = np.argmin(distances)
+                x, y = self.pontos_onibus[idx_min]
+
+                # Vincular ponto à linha se a distância for aceitável
+                if np.min(distances) <= 0.002:
+                    self.lp[nome].add(idx_min)
+                dados['ponto'].append((x, y))
+                dados['linha'].append(nome)
+        return dados

@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-# from shapely.geometry import LineString
+from shapely.geometry import LineString, Point
 from shapely.wkt import loads
 from .classificator import IndicadoresClassificator
 from ..utils.colors import color_iqt
 from ..utils import models
+from typing import Optional
 
 class IndicadoresCalculator:
     """
@@ -38,7 +39,7 @@ class IndicadoresCalculator:
                 'Pontualidade – cumprir horários', #* OK
                 'Frequência de atendimento', #* OK
                 'Cumprimento dos itinerários', #* OK
-                'Abrangência da rede – atender a cidade', #! Nem ideia
+                'Abrangência da rede – atender a cidade', #! Nem ideia Porcentagem de residência <= 400m
                 'Treinamento e capacitação dos motoristas', #* OK
                 'Existência Sistema de informação pela internet', #* OK
                 'Valor da Tarifa ' #* OK
@@ -50,6 +51,7 @@ class IndicadoresCalculator:
         self.dados_completos = None
         self.residencias = None
         self.pontos_onibus = None
+        self.linhas_pontos = None
     
     def load_dados_linha(self, df_line: pd.DataFrame):
         """
@@ -59,12 +61,138 @@ class IndicadoresCalculator:
             if models.validate_df_dados_linhas(df_line):
                 df_copy = df_line.copy()
                 
-                self.dados_linhas = gpd.GeoDataFrame(df_copy)
-                self.dados_linhas['geometry'] = self.dados_linhas['geometry'].apply(loads)
-                self.dados_linhas.groupby(['linha'])
+                dados_linhas = gpd.GeoDataFrame(df_copy)
+                if self._validar_geometry_wkt(dados_linhas).all():
+                    # Converter strings WKT para LineString
+                    self.dados_linhas = self._converter_geometry_para_linestring(dados_linhas)
         except Exception as error:
             print("Erro ao carregar dados de linha: ", error)
             self.dados_linhas = None
+            
+    def _validar_geometry_wkt(self, df, coluna='geometry'):
+        """
+        Valida se os valores da coluna geometry são strings WKT.
+        
+        Args:
+            df (pd.DataFrame): DataFrame contendo a coluna geometry.
+            coluna (str): Nome da coluna geometry.
+            
+        Returns:
+            bool: True se todos os valores forem strings WKT, False caso contrário.
+        """
+        return df[coluna].apply(lambda x: isinstance(x, str) and x.startswith("LINESTRING"))
+    
+    def _converter_geometry_para_linestring(self, df: pd.DataFrame, coluna: str = 'geometry', crs: Optional[str] = "EPSG:4326") -> gpd.GeoDataFrame:
+        """
+        Converte strings WKT em objetos LineString 2D e retorna um GeoDataFrame.
+        
+        Args:
+            df (pd.DataFrame): DataFrame contendo a coluna geometry.
+            coluna (str): Nome da coluna que contém as geometrias.
+            crs (Optional[str]): Sistema de coordenadas do GeoDataFrame. Default é WGS84.
+            
+        Returns:
+            gpd.GeoDataFrame: GeoDataFrame com a coluna geometry convertida para LineString 2D.
+            
+        Raises:
+            ValueError: Se a coluna especificada não existir no DataFrame.
+        """
+        # Validar entrada
+        if coluna not in df.columns:
+            raise ValueError(f"Coluna '{coluna}' não encontrada no DataFrame")
+        
+        # Criar cópia do DataFrame para não modificar o original
+        df_copy = df.copy()
+        
+        def converter_para_2d(geom):
+            if geom is None:
+                return None
+            
+            # Converte string WKT para objeto geometry se necessário
+            if isinstance(geom, str):
+                geom = loads(geom)
+            
+            # Extrai apenas coordenadas X e Y
+            coords_2d = [(x, y) for x, y, *_ in geom.coords]
+            
+            # Cria novo LineString com apenas 2 dimensões
+            return LineString(coords_2d)
+        
+        # Aplica a conversão na coluna especificada
+        df_copy[coluna] = df_copy[coluna].apply(converter_para_2d)
+        
+        # Criar GeoDataFrame
+        gdf = gpd.GeoDataFrame(
+            data=df_copy,
+            geometry=coluna,
+            crs=crs
+        )
+    
+        return gdf
+    
+    def _cria_geometry_pontos_rota(self, df: gpd.GeoDataFrame, coluna: str = 'geometry') -> gpd.GeoDataFrame:
+        """
+        Cria um geometry com os pontos da LineString e adiciona-os ao DataFrame.
+
+        Args:
+            df (gpd.GeoDataFrame): GeoDataFrame contendo a coluna 'geometry' que é um LineString.
+            coluna (str): Nome da coluna que contém o LineString.
+
+        Returns:
+            gpd.GeoDataFrame: DataFrame com a coluna geometry contendo os pontos da LineString.
+        """
+        try:
+            # Verificar se a coluna existe no DataFrame
+            if coluna not in df.columns:
+                raise ValueError(f"Coluna '{coluna}' não encontrada no DataFrame.")
+
+            # Lista para armazenar as linhas do novo DataFrame
+            novo_df_linhas = []
+
+            # Iterar sobre cada linha do DataFrame original
+            for idx, row in df.iterrows():
+                linha_geometry = row[coluna]
+
+                # Validar se a geometria é do tipo LineString
+                if not isinstance(linha_geometry, LineString):
+                    print(f"Aviso: A geometria na linha {idx} não é um LineString. Pulando...")
+                    continue
+
+                # Extrair coordenadas da LineString
+                coords = list(linha_geometry.coords)
+
+                # Criar um ponto para cada coordenada da LineString
+                for coord_idx, coord in enumerate(coords):
+                    nova_linha = dict()
+                    # Criar um dicionário com todos os dados da linha original
+                    nova_linha['linha'] = row.to_dict()['linha']
+
+                    # Criar um objeto Point com as coordenadas X e Y
+                    nova_linha['geometry'] = Point(coord[0], coord[1])
+
+                    # Adicionar informações adicionais úteis
+                    nova_linha['ponto_ordem'] = coord_idx
+                    # nova_linha['total_pontos'] = len(coords)
+
+                    # Adicionar a elevação, se disponível
+                    # if len(coord) > 2:
+                        # nova_linha['elevation'] = coord[2]
+
+                    # Adicionar a nova linha à lista
+                    novo_df_linhas.append(nova_linha)
+
+            # Criar um novo GeoDataFrame com os pontos
+            gdf_pontos = gpd.GeoDataFrame(novo_df_linhas, crs=32723)
+
+            # Remover a coluna original da LineString, se necessário
+            # if coluna in gdf_pontos.columns:
+            #     gdf_pontos = gdf_pontos.drop(columns=[coluna])
+
+            return gdf_pontos
+
+        except Exception as error:
+            print(f"Erro ao criar geometria dos pontos da rota: {error}")
+            return gpd.GeoDataFrame()  # Retorna um GeoDataFrame vazio em caso de erro
             
     def load_cumprimento(self, df_cumprimento: pd.DataFrame):
         """
@@ -84,7 +212,8 @@ class IndicadoresCalculator:
         try:
             if models.validate_df_frequencia(df_frequencia):
                 self.frequencia = self.frequencia_atendimento(df_frequencia)
-        except:
+        except Exception as error:
+            print("Erro ao carregar dados de frequência: ", error)
             self.frequencia = None         
     def load_pontualidade(self, df_pontualidade: pd.DataFrame):
         """
@@ -93,7 +222,8 @@ class IndicadoresCalculator:
         try:
             if models.validate_df_pontualidade(df_pontualidade):
                 self.pontualidade = self.calcular_pontualidade(df_pontualidade)
-        except:
+        except Exception as error:
+            print("Erro ao carregar dados de pontualidade: ", error)
             self.pontualidade = None
     
     def load_residencias(self, df_residencias: gpd.GeoDataFrame):
@@ -103,7 +233,8 @@ class IndicadoresCalculator:
         try:
             if models.validate_residencias(df_residencias):
                 self.residencias = self.tratar_residencias(df_residencias)
-        except:
+        except Exception as error:
+            print("Erro ao carregar dados de residências: ", error)
             self.residencias = None
         
     def load_pontos_onibus(self, df_pontos_onibus: gpd.GeoDataFrame):
@@ -113,7 +244,8 @@ class IndicadoresCalculator:
         try:
             if models.validate_pontos_onibus(df_pontos_onibus):
                 self.pontos_onibus = self.tratar_pontos_onibus(df_pontos_onibus)
-        except:
+        except Exception as error:
+            print("Erro ao carregar dados de pontos de ônibus: ", error)
             self.pontos_onibus = None
     
     def cumprimento_itinerario(self, df_cumprimento: pd.DataFrame):

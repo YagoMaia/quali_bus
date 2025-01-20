@@ -1,3 +1,4 @@
+from .associador import *
 from .colors import *
 from .execptions import *
 from .models import *

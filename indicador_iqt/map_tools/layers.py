@@ -36,7 +36,7 @@ def load_layers_lines(path_lines: str) -> gpd.GeoDataFrame:
     gdf_lines = gpd.GeoDataFrame(pd.concat(gdf_list, ignore_index=True))
     return gdf_lines
 
-def filter_lines(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def filter_lines(gdf: gpd.GeoDataFrame) -> pd.DataFrame | pd.Series:
     """
     Filtra o GeoDataFrame para manter apenas geometrias do tipo LineString.
     
@@ -104,7 +104,7 @@ def calculate_distances_2(gdf_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     gdf_lines['distancia_km'] = gdf_lines['distancia_metros'] / 1000
     return gdf_lines.to_crs(4326)
 
-def add_line_to_map(line: gpd.GeoSeries, group: folium.FeatureGroup, color : str = None) -> None:
+def add_line_to_map(line: pd.Series, group: folium.FeatureGroup, color : str = "") -> None:
     """
     Adiciona uma linha ao mapa Folium com grupo específico.
     
@@ -138,7 +138,7 @@ def add_line_to_map(line: gpd.GeoSeries, group: folium.FeatureGroup, color : str
         tooltip=line.linha
     ).add_to(group)
 
-def add_line_to_map_no_group(line: gpd.GeoSeries, map_routes: folium.Map) -> None:
+def add_line_to_map_no_group(line: pd.Series, map_routes: folium.Map) -> None:
     """
     Adiciona uma linha diretamente ao mapa Folium sem agrupamento.
     
@@ -178,3 +178,7 @@ def add_line_to_map_no_group(line: gpd.GeoSeries, map_routes: folium.Map) -> Non
         ).add_to(map_routes)
     else:
         raise TypeError("A geometria fornecida não é do tipo LineString.")
+    
+def coordenadas_pontos_linhas(line : gpd.GeoSeries) -> list[tuple[float, float]]:
+    # geometry = wkt.loads(line.geometry)
+    return [(lat, lon) for lon, lat, *rest in line.coords]

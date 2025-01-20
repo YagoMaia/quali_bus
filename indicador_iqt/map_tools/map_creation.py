@@ -10,10 +10,10 @@ class MapaIQT:
         Inicializa um mapa centrado na cidade com uma camada base de bairros.
         """
         self.gdf_city = gdf_city
-        self.map = self.initialize_map(self.gdf_city)
+        self.map = self._initialize_map(self.gdf_city)
         self.legenda = ""
 
-    def initialize_map(self, gdf_city: gpd.GeoDataFrame) -> folium.Map:
+    def _initialize_map(self, gdf_city: gpd.GeoDataFrame) -> folium.Map:
         """
         Inicializa um mapa Folium centrado na cidade com uma camada base de bairros.
         
@@ -105,7 +105,7 @@ class MapaIQT:
             add_line_to_map_no_group(line, map_routes)
         return map_routes
 
-    def classification_routes_group(self, gdf_routes: gpd.GeoDataFrame) -> folium.Map:
+    def classification_routes_group(self, gdf_routes: gpd.GeoDataFrame) -> folium.Map | None:
         """
         Adiciona rotas classificadas ao mapa base.
         

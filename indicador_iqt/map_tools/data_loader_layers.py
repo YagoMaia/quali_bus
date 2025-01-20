@@ -2,7 +2,7 @@ import fiona
 import geopandas as gpd
 import pandas as pd
 
-def load_routes(file_path: str) -> gpd.GeoDataFrame:
+def load_routes(file_path: str) -> pd.DataFrame:
     """
     Carrega rotas de transporte público a partir de um arquivo KML.
     
