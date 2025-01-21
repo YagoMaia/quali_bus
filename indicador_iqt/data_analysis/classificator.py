@@ -44,6 +44,16 @@ class IndicadoresClassificator:
             return 1
         else:
             return 0
+        
+    def abrangencia_rede(self, proporcao : float):
+        if proporcao == 1.0:
+            return 3
+        elif 0.95 < proporcao <= 0.99:
+            return 2
+        elif 0.85 < proporcao <= 0.95:
+            return 1
+        else:
+            return 0
 
     def porcentagem_vias_pavimentadas(self, porcentagem: float) -> int:
         """
@@ -90,11 +100,11 @@ class IndicadoresClassificator:
             - 1: 400 <= distancia < 500
             - 0: distancia >= 500 ou distancia < 250
         """
-        if 250 <= distancia:
+        if 100 <= distancia:
             return 3
-        elif 250 <= distancia < 400:
+        elif 100 <= distancia < 200:
             return 2
-        elif 400 <= distancia < 500:
+        elif 200 <= distancia < 400:
             return 1
         else:
             return 0
@@ -256,6 +266,7 @@ class IndicadoresClassificator:
             return 'Suficiente'
         else:
             return 'Insuficiente'
+    
     def classificar_linhas(self, dados_linhas: pd.DataFrame) -> pd.DataFrame:
         classificacao = {
             'linha': [],
@@ -275,12 +286,12 @@ class IndicadoresClassificator:
         for _, linha in dados_linhas.iterrows():
             classificacao['linha'].append(linha['linha'])
             classificacao['I1'].append(self.porcentagem_vias_pavimentadas(linha['via_pavimentada']))
-            classificacao['I2'].append(0)
+            classificacao['I2'].append(self.distancia_pontos(linha['distancia']))
             classificacao['I3'].append(self.integracao_municipal(linha['integracao']))
             classificacao['I4'].append(self.pontualidade_pontuacao(linha['pontualidade']))
             classificacao['I5'].append(self.frequencia_atendimento(linha['frequencia_atendimento']))
             classificacao['I6'].append(self.cumprimento_itinerarios(linha['cumprimento_itinerario']))
-            classificacao['I7'].append(0)
+            classificacao['I7'].append(self.abrangencia_rede(linha['proporcao']))
             classificacao['I8'].append(self.treinamento_capacitacao(linha['treinamento_motorista']))
             classificacao['I9'].append(self.informacao_internet(linha['informacao_internet']))
             classificacao['I10'].append(self.valor_tarifa(linha['valor_tarifa']))

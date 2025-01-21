@@ -5,7 +5,7 @@ from shapely.geometry import LineString, Point
 from shapely.wkt import loads
 from .classificator import IndicadoresClassificator
 from ..utils.colors import color_iqt
-from ..utils import models
+from ..utils import models, Associador
 from typing import Optional
 
 class IndicadoresCalculator:
@@ -45,29 +45,37 @@ class IndicadoresCalculator:
                 'Valor da Tarifa ' #* OK
             ]
         }
-        self.cumprimento = None
-        self.pontualidade = None
-        self.dados_linhas = None
         self.dados_completos = None
-        self.residencias = None
-        self.pontos_onibus = None
-        self.linhas_pontos = None
+        
+    def carregar_dados(self, df_linhas: pd.DataFrame, df_frequencia : pd.DataFrame, df_pontualidade : pd.DataFrame, df_cumprimento : pd.DataFrame):
+        self.cumprimento = self.load_cumprimento(df_cumprimento)
+        self.pontualidade = self.load_pontualidade(df_pontualidade)
+        self.frequencia = self.load_frequencia_atendimento(df_frequencia)
+        self.dados_linhas = self.load_dados_linha(df_linhas)
+        
+        
+    def carregar_dados_geometrias(self, df_pontos_onibus : pd.DataFrame, df_residencias : pd.DataFrame):
+        self.associador = Associador(df_pontos_onibus, self.dados_linhas, df_residencias)
+        self.dados_geograficos = self.associador.consolidar_associacoes()
     
-    def load_dados_linha(self, df_line: pd.DataFrame):
+    def load_dados_linha(self, df_line: pd.DataFrame) -> gpd.GeoDataFrame:
         """
         Carrega os dados de frequência de atendimento a partir de um DataFrame.
         """
         try:
-            if models.validate_df_dados_linhas(df_line):
-                df_copy = df_line.copy()
-                
-                dados_linhas = gpd.GeoDataFrame(df_copy)
-                if self._validar_geometry_wkt(dados_linhas).all():
-                    # Converter strings WKT para LineString
-                    self.dados_linhas = self._converter_geometry_para_linestring(dados_linhas)
+            if not models.validate_df_dados_linhas(df_line):
+                raise
+            
+            df_copy = df_line.copy()
+            
+            dados_linhas = gpd.GeoDataFrame(df_copy)
+            if not self._validar_geometry_wkt(dados_linhas).all():
+                raise
+            
+            return self._converter_geometry_para_linestring(dados_linhas)
         except Exception as error:
             print("Erro ao carregar dados de linha: ", error)
-            self.dados_linhas = None
+            return gpd.GeoDataFrame()
             
     def _validar_geometry_wkt(self, df, coluna='geometry'):
         """
@@ -194,48 +202,41 @@ class IndicadoresCalculator:
             print(f"Erro ao criar geometria dos pontos da rota: {error}")
             return gpd.GeoDataFrame()  # Retorna um GeoDataFrame vazio em caso de erro
             
-    def load_cumprimento(self, df_cumprimento: pd.DataFrame):
+    def load_cumprimento(self, df_cumprimento: pd.DataFrame) -> pd.DataFrame:
         """
         Carrega os dados de cumprimento do itinerário a partir de um DataFrame.
         """
         try:
-            if models.validate_df_pontualidade(df_cumprimento):
-                self.cumprimento = self.cumprimento_itinerario(df_cumprimento)
+            if not models.validate_df_pontualidade(df_cumprimento):
+                raise
+            return self.cumprimento_itinerario(df_cumprimento)
         except Exception as error:
             print("Erro ao carregar dados de cumprimento: ", error)
-            self.cumprimento = None
+            return pd.DataFrame()
             
-    def load_frequencia_atendimento(self, df_frequencia: pd.DataFrame):
+    def load_frequencia_atendimento(self, df_frequencia: pd.DataFrame) -> pd.DataFrame:
         """
         Carrega os dados de frequência de atendimento a partir de um DataFrame.
         """
         try:
-            if models.validate_df_frequencia(df_frequencia):
-                self.frequencia = self.frequencia_atendimento(df_frequencia)
+            if not models.validate_df_frequencia(df_frequencia):
+                raise
+            return self.frequencia_atendimento(df_frequencia)
         except Exception as error:
             print("Erro ao carregar dados de frequência: ", error)
-            self.frequencia = None         
-    def load_pontualidade(self, df_pontualidade: pd.DataFrame):
+            return pd.DataFrame()
+        
+    def load_pontualidade(self, df_pontualidade: pd.DataFrame) -> pd.DataFrame:
         """
         Carrega os dados de pontualidade a partir de um DataFrame.
         """
         try:
-            if models.validate_df_pontualidade(df_pontualidade):
-                self.pontualidade = self.calcular_pontualidade(df_pontualidade)
+            if not models.validate_df_pontualidade(df_pontualidade):
+                raise
+            return self.calcular_pontualidade(df_pontualidade)
         except Exception as error:
             print("Erro ao carregar dados de pontualidade: ", error)
-            self.pontualidade = None
-    
-    def load_residencias(self, df_residencias: gpd.GeoDataFrame):
-        """
-        Carrega os dados de residências a partir de um GeoDataFrame.
-        """
-        try:
-            if models.validate_residencias(df_residencias):
-                self.residencias = self.tratar_residencias(df_residencias)
-        except Exception as error:
-            print("Erro ao carregar dados de residências: ", error)
-            self.residencias = None
+            return pd.DataFrame()
         
     def load_pontos_onibus(self, df_pontos_onibus: gpd.GeoDataFrame):
         """
@@ -284,7 +285,7 @@ class IndicadoresCalculator:
             return df_temp
         except Exception as error:
             print("Erro ao calcular pontualidade: ", error)
-            return None
+            return pd.DataFrame()
 
     def frequencia_atendimento(self, df_frequencia: pd.DataFrame) -> pd.DataFrame:
         """Calcula o tempo médio de operação por rota (linha).
@@ -322,41 +323,52 @@ class IndicadoresCalculator:
     
     def merge_dados(self):
         try:
-            self.dados_linhas['distancia_km'] = self.dados_linhas['geometry'].length * 100
+# Armazenar o CRS original
+            crs_original = self.dados_linhas.crs
+
+            # Converter para o CRS necessário para cálculo de distâncias
+            self.dados_linhas = self.dados_linhas.to_crs(epsg=31983)
+
+            # Calcular a distância em quilômetros
+            self.dados_linhas['distancia_km'] = self.dados_linhas.length / 1000
+
+            # Reverter para o CRS original
+            self.dados_linhas = self.dados_linhas.to_crs(crs_original)
             self.cumprimento['cumprimento_itinerario'] = self.cumprimento['KM Executado'] / self.dados_linhas['distancia_km']
 
             self.dados_completos = pd.merge(self.dados_linhas, self.cumprimento, on=['linha'])
             self.dados_completos = pd.merge(self.dados_completos, self.frequencia, on=['linha'])
             self.dados_completos = pd.merge(self.dados_completos, self.pontualidade, on=['linha'])
+            self.dados_completos = pd.merge(self.dados_completos, self.dados_geograficos, on=['linha'])
             
             self.dados_completos = gpd.GeoDataFrame(self.dados_completos)
             
         except Exception as e:
             print(f"Erro ao mesclar os dados: {e}")
     
-    def tratar_pontos_onibus(self, df_pontos_onibus: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        """
-        Trata os dados de pontos de ônibus para calcular a distância entre eles.
-        """
-        try:
-            df_temp = df_pontos_onibus.copy()
-            return df_temp.to_crs(3857)
-            # Converte latitude e longitude para geometria
-        except Exception as error:
-            print("Erro ao tratar pontos de ônibus: ", error)
-            return None
+    # def tratar_pontos_onibus(self, df_pontos_onibus: gpd.GeoDataFrame) -> Optional[gpd.GeoDataFrame]:
+    #     """
+    #     Trata os dados de pontos de ônibus para calcular a distância entre eles.
+    #     """
+    #     try:
+    #         df_temp = df_pontos_onibus.copy()
+    #         return df_temp.to_crs(3857)
+    #         # Converte latitude e longitude para geometria
+    #     except Exception as error:
+    #         print("Erro ao tratar pontos de ônibus: ", error)
+    #         return None
         
-    def tratar_residencias(self, df_residencias: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-        """
-        Trata os dados de residências para calcular a distância entre elas.
-        """
-        try:
-            df_temp = df_residencias.copy()
-            return df_temp.to_crs(3857)
-            # Converte latitude e longitude para geometria
-        except Exception as error:
-            print("Erro ao tratar residências: ", error)
-            return None
+    # def tratar_residencias(self, df_residencias: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    #     """
+    #     Trata os dados de residências para calcular a distância entre elas.
+    #     """
+    #     try:
+    #         df_temp = df_residencias.copy()
+    #         return df_temp.to_crs(3857)
+    #         # Converte latitude e longitude para geometria
+    #     except Exception as error:
+    #         print("Erro ao tratar residências: ", error)
+    #         return gpd.GeoDataFrame()
     
     
     

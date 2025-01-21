@@ -147,20 +147,36 @@ class Associador:
             
         return pd.DataFrame(associacoes)
     
-    def consolidar_associacoes(self):
+    def _calcular_proporcao_distancia(self, df: pd.DataFrame, limite=400):
+        total_residencias = len(df)
+        residencias_proximas = df[df['distância'] < limite].shape[0]
+        proporcao = residencias_proximas / total_residencias
+        return proporcao
+    
+    def consolidar_associacoes(self) -> pd.DataFrame:
         """
         Consolida todas as associações (linhas, pontos de ônibus e residências).
 
         Returns:
             list: Lista consolidada com linha, ponto de ônibus, residência e distância.
         """
-        residencias_pontos : pd.DataFrame = self.associar_residencias_a_pontos()
-        pontos_linhas = self.associar_ponto_a_linha()
-
-        consolidado = {}
-        for nome_linha, pontos_onibus_linha in pontos_linhas.items():
-            distancias_associadas = residencias_pontos[residencias_pontos['ponto_onibus'].isin(pontos_onibus_linha)]
-            media_distancia = distancias_associadas['distancia'].mean()
-            consolidado[nome_linha] = media_distancia
-            
-        return consolidado
+        try:
+            residencias_pontos : pd.DataFrame = self.associar_residencias_a_pontos()
+            pontos_linhas = self.associar_ponto_a_linha()
+            limite_distancia = 400
+            consolidado = {'linha' : [], 'distancia' : [], 'proporcao': []}
+            for nome_linha, pontos_onibus_linha in pontos_linhas.items():
+                distancias_associadas = residencias_pontos[residencias_pontos['ponto_onibus'].isin(pontos_onibus_linha)]
+                
+                media_distancia = distancias_associadas['distancia'].mean()
+                
+                proporcao = (distancias_associadas['distancia'] < limite_distancia).mean()
+                
+                consolidado['linha'].append(nome_linha)
+                consolidado['distancia'].append(media_distancia)
+                consolidado['proporcao'].append(proporcao)
+                
+            return pd.DataFrame(consolidado)
+        except Exception as e:
+            print(f"Erro ao consolidar as associações: {e}")
+            return pd.DataFrame()

@@ -1,6 +1,6 @@
 import geopandas as gpd
 import folium
-from folium.plugins import GroupedLayerControl
+from folium.plugins import GroupedLayerControl, Fullscreen, MeasureControl
 from .layers import add_line_to_map_no_group, add_line_to_map
 from ..data_analysis.classificator import IndicadoresClassificator
 
@@ -46,8 +46,15 @@ class MapaIQT:
         >>> mapa.save('mapa_cidade.html')
         """
         # Define centro do mapa
-        map_center = [gdf_city.geometry.centroid.y.mean(), gdf_city.geometry.centroid.x.mean()]
-        map_routes = folium.Map(location=map_center, zoom_start=12, tiles='CartoDB Voyager')
+        
+        bounds = gdf_city.total_bounds  # [minx, miny, maxx, maxy]
+    
+    # Calcula o centro do mapa
+        center_lat = (bounds[1] + bounds[3]) / 2
+        center_lon = (bounds[0] + bounds[2]) / 2
+        
+        # map_center = [gdf_city.geometry.centroid.y.mean(), gdf_city.geometry.centroid.x.mean()]
+        map_routes = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles='CartoDB Voyager')
     
         folium.GeoJson(
             gdf_city,
@@ -59,7 +66,23 @@ class MapaIQT:
             },
             name='Bairros'
         ).add_to(map_routes)
+        
+        
+        map_routes.fit_bounds([
+            [bounds[1], bounds[0]],  # [lat_min, lon_min]
+            [bounds[3], bounds[2]]   # [lat_max, lon_max]
+        ])
     
+        # Adiciona controle de zoom
+        Fullscreen().add_to(map_routes)
+        
+        # Adiciona uma barra de escala
+        map_routes.add_child(MeasureControl(
+            position='bottomleft',
+            primary_length_unit='meters',
+            secondary_length_unit='kilometers'
+        ))
+
         return map_routes
 
     def classification_routes(self, map_routes: folium.Map, gdf_routes: gpd.GeoDataFrame) -> folium.Map:
@@ -143,17 +166,18 @@ class MapaIQT:
         >>> mapa_final = classification_routes(mapa, gdf_routes)
         >>> mapa_final.save('mapa_rotas.html')
         """
-        gruopos = {}
+        grupos = {}
         classificador = IndicadoresClassificator()
         listas_grupo = []
         for index, line in gdf_routes.iterrows():
             classificao_iqt = classificador.classificacao_iqt(line.iqt)
-            grupo = gruopos.get(classificao_iqt, None)
+            
+            grupo = grupos.get(classificao_iqt, None)
             if grupo is None:
                 grupo = folium.FeatureGroup(name=classificao_iqt)
                 listas_grupo.append(grupo)
                 self.map.add_child(grupo)
-                gruopos[classificao_iqt] = grupo
+                grupos[classificao_iqt] = grupo
             add_line_to_map(line, grupo)
             
         GroupedLayerControl(
@@ -161,3 +185,65 @@ class MapaIQT:
             collapsed=False,
         ).add_to(self.map)
         
+        self._add_legend()
+
+    def _get_style(self, iqt: float, is_highlighted: bool = False) -> dict:
+        """
+        Retorna o estilo da linha baseado no IQT e se está destacada.
+        """
+        # Cores base por classificação
+        colors = {
+            'Excelente': '#2ca02c',  # Verde
+            'Bom': '#1f77b4',        # Azul
+            'Regular': '#ff7f0e',     # Laranja
+            'Ruim': '#d62728'        # Vermelho
+        }
+        
+        # Definir cor base baseado no IQT
+        if iqt >= 0.8:
+            base_color = colors['Excelente']
+        elif iqt >= 0.6:
+            base_color = colors['Bom']
+        elif iqt >= 0.4:
+            base_color = colors['Regular']
+        else:
+            base_color = colors['Ruim']
+        
+        # Estilo padrão
+        style = {
+            'color': base_color,
+            'weight': 2,
+            'opacity': 0.8
+        }
+        
+        # Se destacada, ajusta o estilo
+        if is_highlighted:
+            style.update({
+                'weight': 4,
+                'opacity': 1.0
+            })
+        
+        return style
+
+    def _add_legend(self):
+        """
+        Adiciona uma legenda ao mapa mostrando as cores por classificação.
+        """
+        legend_html = '''
+        <div style="position: fixed; 
+                bottom: 50px; 
+                left: 50px; 
+                z-index: 1000; 
+                background-color: white;
+                padding: 10px; 
+                border-radius: 5px; 
+                border: 2px solid grey; 
+                font-size: 14px;">
+        <h4 style="margin-top: 0;">Classificação IQT</h4>
+        <div style="margin: 5px 0;"><i style="background: #2ca02c; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></i> Excelente (≥0.8)</div>
+        <div style="margin: 5px 0;"><i style="background: #1f77b4; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></i> Bom (0.6-0.79)</div>
+        <div style="margin: 5px 0;"><i style="background: #ff7f0e; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></i> Regular (0.4-0.59)</div>
+        <div style="margin: 5px 0;"><i style="background: #d62728; width: 15px; height: 15px; display: inline-block; margin-right: 5px;"></i> Ruim (<0.4)</div>
+        </div>
+        '''
+        self.map.get_root().html.add_child(folium.Element(legend_html))
