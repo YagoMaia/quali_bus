@@ -95,12 +95,12 @@ class IndicadoresClassificator:
         -------
         int
             Pontuação atribuída:
-            - 3: distancia >= 250
-            - 2: 250 <= distancia < 400
-            - 1: 400 <= distancia < 500
-            - 0: distancia >= 500 ou distancia < 250
+            - 3: distancia >= 100
+            - 2: 100 <= distancia < 200
+            - 1: 200 <= distancia < 400
+            - 0: caso contrário
         """
-        if 100 <= distancia:
+        if 100 >= distancia:
             return 3
         elif 100 <= distancia < 200:
             return 2
@@ -184,9 +184,9 @@ class IndicadoresClassificator:
         """
         if 1 <= etinerario:
             return 3
-        elif 0.9 <= etinerario <= 0.8:
+        elif 0.8 <= etinerario <= 0.9:
             return 2
-        elif 0.7 <= etinerario <= 0.5:
+        elif 0.5 <= etinerario <= 0.7:
             return 1
         else:
             return 0
@@ -211,7 +211,7 @@ class IndicadoresClassificator:
         """
         if 1 <= treinamento:
             return 3
-        elif 0.98 <= treinamento <= 0.95:
+        elif 0.95 <= treinamento <= 0.98:
             return 2
         elif 0.90 <= treinamento <= 0.95:
             return 1

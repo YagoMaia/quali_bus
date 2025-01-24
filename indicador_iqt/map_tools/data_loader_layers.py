@@ -2,15 +2,16 @@ import fiona
 import geopandas as gpd
 import pandas as pd
 
-def load_routes(file_path: str) -> pd.DataFrame:
+
+def carregar_routes(file_path: str) -> pd.DataFrame:
     """
     Carrega rotas de transporte público a partir de um arquivo KML.
-    
+
     Parameters
     ----------
     file_path : str
         Caminho para o arquivo KML contendo as rotas de transporte.
-        
+
     Returns
     -------
     gpd.GeoDataFrame
@@ -19,7 +20,7 @@ def load_routes(file_path: str) -> pd.DataFrame:
         - linha: número ou identificador da linha
         - sentido: direção ou sentido da linha
         - Description: descrição da rota (rotas sem descrição são filtradas)
-        
+
     Notes
     -----
     A função realiza os seguintes passos:
@@ -28,13 +29,13 @@ def load_routes(file_path: str) -> pd.DataFrame:
     3. Concatena as camadas em um único GeoDataFrame
     4. Filtra rotas sem descrição
     5. Separa o campo 'Name' em 'linha' e 'sentido'
-    
+
     Examples
     --------
-    >>> gdf_routes = load_routes('caminho/para/rotas.kml')
+    >>> gdf_routes = carregar_routes('caminho/para/rotas.kml')
     >>> print(gdf_routes.columns)
     Index(['geometry', 'Description', 'linha', 'sentido'])
-    
+
     Raises
     ------
     FileNotFoundError
@@ -45,49 +46,50 @@ def load_routes(file_path: str) -> pd.DataFrame:
         Se o arquivo não contiver as colunas esperadas
     """
     # Habilita suporte ao driver KML
-    fiona.drvsupport.supported_drivers['libkml'] = 'rw'
-    fiona.drvsupport.supported_drivers['LIBKML'] = 'rw'
-    
+    fiona.drvsupport.supported_drivers["libkml"] = "rw"
+    fiona.drvsupport.supported_drivers["LIBKML"] = "rw"
+
     # Carrega todas as camadas
     gdf_list = []
     for layer in fiona.listlayers(file_path):
-        gdf = gpd.read_file(file_path, driver='LIBKML', layer=layer)
+        gdf = gpd.read_file(file_path, driver="LIBKML", layer=layer)
         gdf_list.append(gdf)
-    
+
     # Concatena e processa os dados
     gdf = gpd.GeoDataFrame(pd.concat(gdf_list, ignore_index=True))
     gdf = gdf.query("Description != ''")
-    gdf[['linha', 'sentido']] = gdf['Name'].str.split(' - ', expand=True)
-    del gdf['Name']
-    
+    gdf[["linha", "sentido"]] = gdf["Name"].str.split(" - ", expand=True)
+    del gdf["Name"]
+
     return gdf
 
-def load_neighborhoods(file_path: str) -> gpd.GeoDataFrame:
+
+def carregar_neighborhoods(file_path: str) -> gpd.GeoDataFrame:
     """
     Carrega os bairros da cidade a partir de um arquivo geoespacial.
-    
+
     Parameters
     ----------
     file_path : str
         Caminho para o arquivo contendo os polígonos dos bairros.
         Suporta formatos compatíveis com GeoPandas (Shapefile, GeoJSON, etc.).
-        
+
     Returns
     -------
     gpd.GeoDataFrame
         GeoDataFrame contendo os polígonos dos bairros.
-        
+
     Notes
     -----
     O CRS (Sistema de Referência de Coordenadas) do arquivo é mantido.
     Há código comentado para reprojeção para Web Mercator (EPSG:3857)
     se necessário no futuro.
-    
+
     Examples
     --------
-    >>> gdf_neighborhoods = load_neighborhoods('caminho/para/bairros.shp')
+    >>> gdf_neighborhoods = carregar_neighborhoods('caminho/para/bairros.shp')
     >>> print(gdf_neighborhoods.crs)
-    
+
     Raises
     ------
     FileNotFoundError

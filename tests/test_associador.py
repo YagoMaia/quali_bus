@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import geopandas as gpd
 import numpy as np
-from shapely.geometry import Point, LineString
+from shapely.geometry import LineString
 from indicador_iqt.utils.associador import Associador
 
 @pytest.fixture
@@ -94,4 +94,4 @@ def test_consolidar_associacoes(associador):
     """Testa a consolidação final das associações."""
     consolidado = associador.consolidar_associacoes()
     
-    assert isinstance(consolidado, dict)
+    assert not consolidado.empty

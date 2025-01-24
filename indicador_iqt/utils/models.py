@@ -93,9 +93,16 @@ def validate_df_frequencia(df: pd.DataFrame) -> bool:
 def validate_df_pontualidade(df: pd.DataFrame) -> bool:
     required_columns = [
         'Data', 'Trajeto',
-        'Chegada ao ponto', 'Partida Planejada', 'Partida Real', 'Diff Partida',
-        'Chegada Planejada', 'Chegada Real', 'Diff Chegada',
-        'Tempo Viagem', 'KM Executado',
+        'Chegada ao ponto', 'Partida Real', 'Chegada Real',
+    ]
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise ValueError(f"df_pontualidade está faltando colunas: {missing_columns}")
+    return True
+
+def validate_df_cumprimento(df: pd.DataFrame) -> bool:
+    required_columns = [
+        'Data', 'Trajeto', 'KM Executado',
     ]
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:

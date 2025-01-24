@@ -1,6 +1,6 @@
 import geopandas as gpd
 import folium
-from folium.plugins import GroupedLayerControl, Fullscreen, MeasureControl
+from folium.plugins import GroupedLayerControl, Fullscreen
 from .layers import add_line_to_map_no_group, add_line_to_map
 from ..data_analysis.classificator import IndicadoresClassificator
 
@@ -49,7 +49,7 @@ class MapaIQT:
         
         bounds = gdf_city.total_bounds  # [minx, miny, maxx, maxy]
     
-    # Calcula o centro do mapa
+        # Calcula o centro do mapa
         center_lat = (bounds[1] + bounds[3]) / 2
         center_lon = (bounds[0] + bounds[2]) / 2
         
@@ -76,13 +76,6 @@ class MapaIQT:
         # Adiciona controle de zoom
         Fullscreen().add_to(map_routes)
         
-        # Adiciona uma barra de escala
-        map_routes.add_child(MeasureControl(
-            position='bottomleft',
-            primary_length_unit='meters',
-            secondary_length_unit='kilometers'
-        ))
-
         return map_routes
 
     def classification_routes(self, map_routes: folium.Map, gdf_routes: gpd.GeoDataFrame) -> folium.Map:

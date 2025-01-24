@@ -30,9 +30,9 @@ A biblioteca suporta a leitura de arquivos KML e KMZ. Para trabalhar com arquivo
 
 python
 
-from map_tools import load_geospatial_data
+from map_tools import carregar_geospatial_data
 
-gdf = load_geospatial_data("caminho_para_arquivo.kml", layer='Nome_da_Camada')
+gdf = carregar_geospatial_data("caminho_para_arquivo.kml", layer='Nome_da_Camada')
 
 Filtrar e Manipular Dados Geoespaciais
 
@@ -68,22 +68,27 @@ Abaixo, um exemplo de uso da biblioteca para criar um mapa com dados de linhas d
 
 python
 
-from map_tools import load_geospatial_data, create_map, add_line_to_map, save_map
+from map_tools import carregar_geospatial_data, create_map, add_line_to_map, save_map
 
 # Carregar dados geoespaciais
-gdf = load_geospatial_data("caminho_para_arquivo.kml", layer='Camada_desejada')
+
+gdf = carregar_geospatial_data("caminho_para_arquivo.kml", layer='Camada_desejada')
 
 # Filtrar dados
+
 gdf_filtered = filter_data(gdf, column='Name', value='ativo')
 
 # Criar o mapa
+
 m = create_map(gdf_filtered, location=[-16.737, -43.8647], zoom_start=12)
 
 # Adicionar linhas de rota
+
 for index, row in gdf_filtered.iterrows():
-    add_line_to_map(m, row['Name'], row.geometry, color='blue')
+add_line_to_map(m, row['Name'], row.geometry, color='blue')
 
 # Salvar o mapa
+
 save_map(m, "meu_mapa_interativo.html")
 
 Referências
