@@ -1,69 +1,92 @@
-# Indicador IQT
+# 📊 Indicadores IQT - Biblioteca para Avaliação da Qualidade do Transporte Público
 
-Biblioteca Python para análise e classificação de indicadores de qualidade do transporte urbano, com foco em transporte coletivo. O `indicador_iqt` fornece ferramentas para processar e validar dados de transporte, aplicando classificações específicas de acordo com métricas de qualidade. A biblioteca permite trabalhar com dados de rotas, frequência, pontualidade e outros dados relevantes ao transporte público.
+Esta biblioteca tem como objetivo automatizar o cálculo do **Índice de Qualidade do Transporte (IQT)**, baseado nos critérios estabelecidos no artigo **"MESTRADO INDICADOR DE QUALIDADE PARA AVALIAR TRANSPORTE COLETIVO URBANO"**. O IQT é uma métrica essencial para a análise e otimização do transporte público, considerando fatores como pontualidade, frequência de atendimento, cumprimento de itinerários e infraestrutura.
 
-<!-- ## Índice
+---
 
-- [Instalação](#instalação)
-- [Funcionalidades](#funcionalidades)
-  - [Carregar Arquivos Geoespaciais](#carregar-arquivos-geoespaciais)
-  - [Filtrar e Manipular Dados Geoespaciais](#filtrar-e-manipular-dados-geoespaciais)
-  - [Gerar Mapas Interativos](#gerar-mapas-interativos)
-  - [Adicionar Linhas com Cores Personalizadas](#adicionar-linhas-com-cores-personalizadas)
-- [Exemplo de Uso](#exemplo-de-uso)
-- [Referências](#referências)
+## 📦 **Instalação**
 
---- -->
-
-## Instalação
-
-Para instalar a biblioteca `indicador_iqt`, basta clonar o repositório e instalar as dependências:
+Antes de utilizar a biblioteca, certifique-se de instalar as dependências necessárias:
 
 ```bash
-git clone https://github.com/YagoMaia/indicador_iqt
-cd indicador_iqt
 pip install -r requirements.txt
 ```
+## 🚀 Como Usar
+🔹 1. Importação da Biblioteca
 
-Certifique-se de que as bibliotecas necessárias como `folium`, `geopandas`, `geopandas`, `pandas`, e `fiona` estejam corretamente instaladas.
+```python
+from indicador_iqt import IndicadoresCalculator
+```
 
-## Funcionalidades
+🔹 2. Inicializando a Classe
+```python
+calc = IndicadoresCalculator()
+```
 
-A biblioteca `indicador_iqt` foi projetada para auxiliar na análise e visualização de dados de transporte urbano. As principais funcionalidades incluem:
+🔹 3. Carregando os Dados
 
-### Classificação de Indicadores de Qualidade do Transporte (IQT):
+Os dados podem ser carregados a partir de um `pandas.DataFrame` ou `geopandas.GeoDataFrame`:
+```python
+import pandas as pd
+import geopandas as gpd
+from shapely.geometry import LineString
 
-- Classificação de rotas e dados de transporte com base em métricas de qualidade predefinidas.
-- Uso da classe `IndicadoresClassificator` para categorizar rotas e dados de transporte.
+# Exemplo de dados fictícios de linhas de ônibus
+linhas_df = gpd.GeoDataFrame({
+    'linha': ['101', '102'],
+    'geometry': [LineString([(0, 0), (1, 1), (2, 2)]), LineString([(3, 3), (4, 4), (5, 5)])]
+})
 
-### Validação de DataFrames:
+# Carregar os dados na classe
+calc.load_dados_linha(linhas_df)
+```
 
-- Funções de validação para verificar se os DataFrames possuem as colunas necessárias antes do processamento.
-- Funções específicas para validar `gdf_city`, `df_dados_linhas`, `df_frequencia`, e `df_pontualidade`, levantando erros se houver colunas ausentes.
+🔹 4. Cálculo de Indicadores
 
-### Mapeamento de Rotas com Folium:
+A biblioteca suporta o cálculo de diversos indicadores de qualidade do transporte, como:
 
-- Criação de mapas interativos utilizando a biblioteca Folium.
-- Funções para adicionar rotas, grupos e outros dados geoespaciais ao mapa.
+```python
+# Cálculo do tempo médio de operação
+tempo_medio = calc.frequencia_atendimento(df_frequencia)
+print(tempo_medio)
 
-### Manipulação de Dados GTFS:
+# Cálculo da pontualidade
+pontualidade = calc.calcular_pontualidade(df_pontualidade)
+print(pontualidade)
 
-- Manipulação e análise de dados GTFS (General Transit Feed Specification) utilizando o modulo `gtfs_functions`.
+# Cálculo do cumprimento de itinerário
+cumprimento = calc.cumprimento_itinerario(df_cumprimento)
+print(cumprimento)
+```
 
-## Pré-requisitos
+🔹 5. Cálculo do Índice IQT
+```python
+linha_indicadores = [0.8, 0.7, 0.6, 0.9, 0.85, 0.75, 0.65, 0.7, 0.5, 0.6]
+iqt = calc.calcula_iqt(linha_indicadores)
+print(f"Índice IQT: {iqt}")
+```
 
-Para utilizar esta biblioteca, é necessário ter os seguintes pacotes instalados:
+| Método | Descrição |
+| ---    | ---       |
+| `load_dados_linha(df)` | Carrega os dados das linhas e converte WKT para LineString. |
+| `frequencia_atendimento(df)` | Calcula o tempo médio de operação por rota. |
+| `calcular_pontualidade(df)` | Calcula a pontuação para o indicador de pontualidade. |
+| `cumprimento_itinerario(df)` | Calcula o cumprimento de itinerário por quilometragem. |
+| `calcula_iqt(lista_indicadores)` | Calcula o Índice de Qualidade do Transporte (IQT). |
+| `processar_iqt()` | Processa os cálculos do IQT e gera classificações. |
 
-- `Pandas` para manipulação de dados
-- `Folium` para criação de mapas interativos
-- `Geopandas` para manipulação de dados geoespaciais
+## 🤝 Contribuindo
 
-## Contribuição
+### Contribuições são bem-vindas! Para contribuir:
 
-Sinta-se à vontade para contribuir para a biblioteca indicador_iqt. Para contribuir, faça um fork do repositório, crie uma branch para suas alterações e envie um pull request. Agradecemos suas sugestões e melhorias.
+- Fork o repositório.
+- Crie uma branch `(feature/nova-funcionalidade)`.
+- Faça suas alterações e commit `(git commit -m "Adiciona nova funcionalidade")`.
+- Envie um Pull Request.
 
-- Faça o fork do projeto
-- Crie uma branch com suas funcionalidades (`git checkout -b feature/NovaFuncionalidade`)
-- Commit suas alterações (`git commit -am 'Adiciona nova funcionalidade'`)
-- Envie para o branch (`git push origin feature/NovaFuncionalidade`)
-- Crie um novo Pull Request
+### 📜 Licença
+
+Este projeto está sob a licença MIT. Consulte o arquivo LICENSE para mais detalhes.
+👨‍💻 Autor
+
+Desenvolvido por Yago Maia - GitHub: https://github.com/YagoMaia

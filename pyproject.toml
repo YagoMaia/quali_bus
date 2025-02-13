@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "indicador_iqt"
+version = "0.1.0"
+authors = [{ name = "Yago Henrique Veloso Maia", email = "yagohenriquev123@gmail.com" }]
+description = "Uma breve descrição do seu pacote"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "MIT" }
+dependencies = [
+    "numpy",
+    "pandas",
+    "geopandas",
+    "folium"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/seu_usuario/meu_pacote"
+"Bug Tracker" = "https://github.com/seu_usuario/meu_pacote/issues"
