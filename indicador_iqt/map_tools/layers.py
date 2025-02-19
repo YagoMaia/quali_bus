@@ -110,9 +110,31 @@ def calculate_distances_2(gdf_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gdf_lines.to_crs(4326)
 
 
-def add_line_to_map(
-    line: pd.Series, group: folium.FeatureGroup, color: str = ""
-) -> None:
+def criar_popup(line : pd.Series):
+    popup_content = """
+    <div style="max-width:300px;">
+        <h4 style="margin-bottom:10px;">{}</h4>
+        <table style="width:100%; border-collapse:collapse;">
+    """.format(line.linha)
+    
+    # Adicionando todas as informações disponíveis na Series
+    for idx, value in line.items():
+        if idx != 'geometry':  # Excluindo a coluna de geometria
+            value = round(value, 2) if isinstance(value, float) else value
+            popup_content += f"""
+            <tr style="border-bottom:1px solid #ddd;">
+                <td style="padding:5px;"><strong>{idx}</strong></td>
+                <td style="padding:5px;">{value}</td>
+            </tr>
+            """
+    popup_content += """
+        </table>
+    </div>
+    """
+    
+    return popup_content
+
+def add_line_to_map(line: pd.Series, group: folium.FeatureGroup, color: str = "") -> None:
     """
     Adiciona uma linha ao mapa Folium com grupo específico.
 
@@ -144,6 +166,7 @@ def add_line_to_map(
         weight=2.5,
         opacity=1,
         tooltip=line.linha,
+        popup=criar_popup(line)
     ).add_to(group)
 
 
