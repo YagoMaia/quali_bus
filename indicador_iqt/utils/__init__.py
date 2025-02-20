@@ -1,5 +1,5 @@
 from .associador import *
-from .colors import *
+from .cores import *
 from .execptions import *
-from .models import *
+from .modelos import *
 from .utils import *

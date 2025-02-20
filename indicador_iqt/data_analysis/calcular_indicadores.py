@@ -6,12 +6,12 @@ import pandas as pd
 from shapely.geometry import LineString, Point
 from shapely.wkt import loads
 
-from ..utils import Associador, models
-from ..utils.colors import color_iqt
-from .classificator import IndicadoresClassificator
+from ..utils import Associador, modelos
+from ..utils.cores import cor_iqt
+from .classificar_indicadores import ClassificarIndicadores
 
 
-class IndicadoresCalculator:
+class CalcularIndicadores:
     """
     Classe para cálculo e avaliação de indicadores de qualidade do transporte público.
 
@@ -58,19 +58,18 @@ class IndicadoresCalculator:
                 0.0277,
             ],
             "indicador": [
-                "Porcentagem das vias pavimentadas",  # * OK
-                "Distância entre pontos",  # * Pegar média dos pontos
-                "Integração municipal do sistema de transporte",  # * OK
-                "Pontualidade – cumprir horários",  # * OK
-                "Frequência de atendimento",  # * OK
-                "Cumprimento dos itinerários",  # * OK
-                "Abrangência da rede – atender a cidade",  # * Porcentagem de residência <= 400m
-                "Treinamento e capacitação dos motoristas",  # * OK
-                "Existência Sistema de informação pela internet",  # * OK
-                "Valor da Tarifa ",  # * OK
+                "Porcentagem das vias pavimentadas",
+                "Distância entre pontos",
+                "Integração municipal do sistema de transporte",
+                "Pontualidade – cumprir horários",
+                "Frequência de atendimento",
+                "Cumprimento dos itinerários",
+                "Abrangência da rede – atender a cidade",
+                "Treinamento e capacitação dos motoristas",
+                "Existência Sistema de informação pela internet",
+                "Valor da Tarifa ",
             ],
         }
-        self.dados_completos = None
 
     def carregar_dados(
         self,
@@ -80,7 +79,7 @@ class IndicadoresCalculator:
         df_cumprimento: pd.DataFrame,
     ):
         self.dados_linhas = self.carregar_dados_linha(df_linhas)
-        self.frequencia = self.carregar_frequencia_atendimento(df_frequencia)
+        self.frequencia = self.carregar_frequencia_atendimento_pontuacao(df_frequencia)
         self.pontualidade = self.carregar_pontualidade(df_pontualidade)
         self.cumprimento = self.carregar_cumprimento(df_cumprimento)
 
@@ -89,7 +88,7 @@ class IndicadoresCalculator:
     ):
         self.associador = Associador(
             df_pontos_onibus, self.dados_linhas, df_residencias
-        )
+        )  # type: ignore
         self.dados_geograficos = self.associador.consolidar_associacoes()
 
     def carregar_dados_linha(self, df_line: pd.DataFrame) -> gpd.GeoDataFrame:
@@ -97,7 +96,7 @@ class IndicadoresCalculator:
         Carrega os dados de frequência de atendimento a partir de um DataFrame.
         """
         try:
-            if not models.validate_df_dados_linhas(df_line):
+            if not modelos.validar_df_dados_linhas(df_line):
                 raise
 
             df_copy = df_line.copy()
@@ -168,10 +167,9 @@ class IndicadoresCalculator:
             return LineString(coords_2d)
 
         # Aplica a conversão na coluna especificada
-        df_copy[coluna] = df_copy[coluna].apply(converter_para_2d)
+        df_copy[coluna] = df_copy[coluna].apply(converter_para_2d)  # type: ignore
 
-        # Criar GeoDataFrame
-        gdf = gpd.GeoDataFrame(data=df_copy, geometry=coluna, crs=crs)
+        gdf = gpd.GeoDataFrame(data=df_copy, geometry=coluna, crs=crs)  # type: ignore
 
         return gdf
 
@@ -221,21 +219,12 @@ class IndicadoresCalculator:
 
                     # Adicionar informações adicionais úteis
                     nova_linha["ponto_ordem"] = coord_idx
-                    # nova_linha['total_pontos'] = len(coords)
-
-                    # Adicionar a elevação, se disponível
-                    # if len(coord) > 2:
-                    # nova_linha['elevation'] = coord[2]
 
                     # Adicionar a nova linha à lista
                     novo_df_linhas.append(nova_linha)
 
             # Criar um novo GeoDataFrame com os pontos
-            gdf_pontos = gpd.GeoDataFrame(novo_df_linhas, crs=32723)
-
-            # Remover a coluna original da LineString, se necessário
-            # if coluna in gdf_pontos.columns:
-            #     gdf_pontos = gdf_pontos.drop(columns=[coluna])
+            gdf_pontos = gpd.GeoDataFrame(novo_df_linhas, crs=32723)  # type: ignore
 
             return gdf_pontos
 
@@ -248,23 +237,23 @@ class IndicadoresCalculator:
         Carrega os dados de cumprimento do itinerário a partir de um DataFrame.
         """
         try:
-            if not models.validate_df_cumprimento(df_cumprimento):
+            if not modelos.validar_df_cumprimento(df_cumprimento):
                 raise
             return self.cumprimento_itinerario(df_cumprimento)
         except Exception as error:
             print("Erro ao carregar dados de cumprimento: ", error)
             return pd.DataFrame()
 
-    def carregar_frequencia_atendimento(
+    def carregar_frequencia_atendimento_pontuacao(
         self, df_frequencia: pd.DataFrame
     ) -> pd.DataFrame:
         """
         Carrega os dados de frequência de atendimento a partir de um DataFrame.
         """
         try:
-            if not models.validate_df_frequencia(df_frequencia):
+            if not modelos.validar_df_frequencia(df_frequencia):
                 raise
-            return self.frequencia_atendimento(df_frequencia)
+            return self.frequencia_atendimento_pontuacao(df_frequencia)
         except Exception as error:
             print("Erro ao carregar dados de frequência: ", error)
             return pd.DataFrame()
@@ -274,23 +263,12 @@ class IndicadoresCalculator:
         Carrega os dados de pontualidade a partir de um DataFrame.
         """
         try:
-            if not models.validate_df_pontualidade(df_pontualidade):
+            if not modelos.validar_df_pontualidade(df_pontualidade):
                 raise
             return self.calcular_pontualidade(df_pontualidade)
         except Exception as error:
             print("Erro ao carregar dados de pontualidade: ", error)
             return pd.DataFrame()
-
-    # def carregar_pontos_onibus(self, df_pontos_onibus: gpd.GeoDataFrame):
-    #     """
-    #     Carrega os dados de pontos de ônibus a partir de um GeoDataFrame.
-    #     """
-    #     try:
-    #         if models.validate_pontos_onibus(df_pontos_onibus):
-    #             self.pontos_onibus = self.tratar_pontos_onibus(df_pontos_onibus)
-    #     except Exception as error:
-    #         print("Erro ao carregar dados de pontos de ônibus: ", error)
-    #         self.pontos_onibus = None
 
     def cumprimento_itinerario(self, df_cumprimento: pd.DataFrame):
         df_temp = df_cumprimento.copy()
@@ -349,7 +327,9 @@ class IndicadoresCalculator:
             print("Erro ao calcular pontualidade: ", error)
             return pd.DataFrame()
 
-    def frequencia_atendimento(self, df_frequencia: pd.DataFrame) -> pd.DataFrame:
+    def frequencia_atendimento_pontuacao(
+        self, df_frequencia: pd.DataFrame
+    ) -> pd.DataFrame:
         """Calcula o tempo médio de operação por rota (linha).
 
         Args:
@@ -371,38 +351,51 @@ class IndicadoresCalculator:
         df_temp["hsstop"] = pd.to_datetime(df_temp["hsstop"], format="%H:%M:%S")
 
         # Calcular a duração como a diferença entre hsstop e hsstart
-        df_temp["frequencia_atendimento"] = df_temp["hsstop"] - df_temp["hsstart"]
-        df_temp["frequencia_atendimento"] = df_temp["frequencia_atendimento"].apply(
-            lambda x: int(x.total_seconds() / 60)
+        df_temp["frequencia_atendimento_pontuacao"] = (
+            df_temp["hsstop"] - df_temp["hsstart"]
         )
+        df_temp["frequencia_atendimento_pontuacao"] = df_temp[
+            "frequencia_atendimento_pontuacao"
+        ].apply(lambda x: int(x.total_seconds() / 60))
 
-        df_temp["datai"] = pd.to_datetime(df_temp["datai"], format="%d/%m/%Y")
+        df_temp["data"] = pd.to_datetime(df_temp["data"], format="%d/%m/%Y")
         df_temp["dataf"] = pd.to_datetime(df_temp["dataf"], format="%d/%m/%Y")
 
         # df_temp['sentido'] = df_temp['sentido'].replace({0: 'IDA', 1: 'VOLTA'})
 
         df_temp = (
-            df_temp.groupby(["linha"])["frequencia_atendimento"].mean().reset_index()
+            df_temp.groupby(["linha"])["frequencia_atendimento_pontuacao"]
+            .mean()
+            .reset_index()
         )
 
         return df_temp
 
     def merge_dados(self):
         try:
+            if not isinstance(self.dados_linhas, gpd.GeoDataFrame):
+                raise
             # Armazenar o CRS original
             crs_original = self.dados_linhas.crs
 
             # Converter para o CRS necessário para cálculo de distâncias
             self.dados_linhas = self.dados_linhas.to_crs(epsg=31983)
 
+            if not isinstance(self.dados_linhas, gpd.GeoDataFrame):
+                raise
+
             # Calcular a distância em quilômetros
             self.dados_linhas["distancia_km"] = self.dados_linhas.length / 1000
 
             # Reverter para o CRS original
             self.dados_linhas = self.dados_linhas.to_crs(crs_original)
-            self.cumprimento["cumprimento_itinerario"] = (
-                self.cumprimento["KM Executado"] / self.dados_linhas["distancia_km"]
-            )
+
+            if not isinstance(self.dados_linhas, gpd.GeoDataFrame):
+                raise
+
+            self.cumprimento["cumprimento_itinerario"] = self.cumprimento[
+                "KM Executado"
+            ].astype(float) / self.dados_linhas["distancia_km"].astype(float)  # type: ignore
 
             self.dados_completos = pd.merge(
                 self.dados_linhas, self.cumprimento, on=["linha"]
@@ -422,36 +415,12 @@ class IndicadoresCalculator:
         except Exception as e:
             print(f"Erro ao mesclar os dados: {e}")
 
-    # def tratar_pontos_onibus(self, df_pontos_onibus: gpd.GeoDataFrame) -> Optional[gpd.GeoDataFrame]:
-    #     """
-    #     Trata os dados de pontos de ônibus para calcular a distância entre eles.
-    #     """
-    #     try:
-    #         df_temp = df_pontos_onibus.copy()
-    #         return df_temp.to_crs(3857)
-    #         # Converte latitude e longitude para geometria
-    #     except Exception as error:
-    #         print("Erro ao tratar pontos de ônibus: ", error)
-    #         return None
-
-    # def tratar_residencias(self, df_residencias: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
-    #     """
-    #     Trata os dados de residências para calcular a distância entre elas.
-    #     """
-    #     try:
-    #         df_temp = df_residencias.copy()
-    #         return df_temp.to_crs(3857)
-    #         # Converte latitude e longitude para geometria
-    #     except Exception as error:
-    #         print("Erro ao tratar residências: ", error)
-    #         return gpd.GeoDataFrame()
-
     def classificar_linha(self):
-        classificador = IndicadoresClassificator()
+        classificador = ClassificarIndicadores()
         self.merge_dados()
         self.classificao_linhas = classificador.classificar_linhas(self.dados_completos)
 
-    def calcula_iqt(self, linha: list) -> float:
+    def calcular_iqt(self, linha: list) -> float:
         """
         Calcula o Índice de Qualidade do Transporte (IQT) para uma linha específica.
 
@@ -498,8 +467,8 @@ class IndicadoresCalculator:
             ].tolist()  # Pegando valores de 'I1', 'I3', 'I4', etc.
 
             # Chamar a função de cálculo do IQT passando os valores da linha
-            iqt = self.calcula_iqt(valores_indicadores)
-            cor = color_iqt(iqt)
+            iqt = self.calcular_iqt(valores_indicadores)
+            cor = cor_iqt(iqt)
             valores_iqt.append(iqt)
             cores.append(cor)
         self.dados_completos["iqt"] = valores_iqt

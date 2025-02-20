@@ -2,6 +2,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, Point
+from typing import Optional
 
 
 class Associador:
@@ -22,7 +23,6 @@ class Associador:
         """
         # Criar GeoDataFrames e arrays NumPy
         self.gdf_residencias, self.gdf_pontos_onibus = self._criar_geodataframes(residencias, pontos_onibus)
-        self.teste = self.gdf_residencias.copy()
         self.gdf_residencias = self.gdf_residencias.to_crs(self.LOCAL_CRS)  # UTM 23S para Minas Gerais
         self.gdf_pontos_onibus = self.gdf_pontos_onibus.to_crs(self.LOCAL_CRS)
         self.linhas = linhas.to_crs(self.LOCAL_CRS)
@@ -35,7 +35,7 @@ class Associador:
         latitude_ok = (-90 <= df['Latitude'].max() <= 90) and (-90 <= df['Latitude'].min() <= 90)
         return longitude_ok and latitude_ok
 
-    def _extrair_coordenadas(self) -> tuple[np.ndarray, np.ndarray]:
+    def _extrair_coordenadas(self) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """
         Extrai coordenadas dos GeoDataFrames e converte para arrays NumPy.
         
@@ -43,18 +43,20 @@ class Associador:
             Tuple[np.ndarray, np.ndarray]: Arrays com coordenadas das residências e pontos de ônibus
         """
         # Extrair coordenadas das residências
-        coords_residencias = np.array([
-            [geom.x, geom.y] 
-            for geom in self.gdf_residencias.geometry
-        ])
-        
-        # Extrair coordenadas dos pontos de ônibus
-        coords_pontos_onibus = np.array([
-            [geom.x, geom.y] 
-            for geom in self.gdf_pontos_onibus.geometry
-        ])
-        
-        return coords_residencias, coords_pontos_onibus
+        if isinstance(self.gdf_pontos_onibus, gpd.GeoDataFrame) and isinstance(self.gdf_residencias, gpd.GeoDataFrame):
+            coords_residencias = np.array([
+                [geom.x, geom.y] 
+                for geom in self.gdf_residencias.geometry
+            ])
+            
+            # Extrair coordenadas dos pontos de ônibus
+            coords_pontos_onibus = np.array([
+                [geom.x, geom.y] 
+                for geom in self.gdf_pontos_onibus.geometry
+            ])
+            
+            return coords_residencias, coords_pontos_onibus
+        return None, None
 
     def _criar_geodataframes(self, df_residencias: pd.DataFrame, df_pontos_onibus: pd.DataFrame) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
         """Converte DataFrames para GeoDataFrames."""
@@ -81,21 +83,21 @@ class Associador:
         ])
         
         # Criar GeoDataFrames
-        gdf_residencias = gpd.GeoDataFrame(
+        gdf_residencias = gpd.GeoDataFrame( 
             data=residencias, 
             geometry=geometry_residencias,
             crs=self.EARTH_CRS
-        )
+        ) # type: ignore
         
-        gdf_pontos_onibus = gpd.GeoDataFrame(
+        gdf_pontos_onibus = gpd.GeoDataFrame( 
             data=df_pontos_onibus, 
             geometry=geometry_onibus,
             crs=self.EARTH_CRS
-        )
+        ) # type: ignore
         
         return gdf_residencias, gdf_pontos_onibus
 
-    def euclidean_distance(self, coord1: np.ndarray, coord2: np.ndarray, axis : int = 1) -> np.ndarray:
+    def distancia_euclidiana(self, coord1: np.ndarray, coord2: np.ndarray, axis : int = 1) -> np.ndarray:
         """Calcula a distância euclidiana entre dois conjuntos de coordenadas."""
         return np.sqrt(np.sum(np.square(coord1 - coord2), axis=axis))
     
@@ -121,12 +123,14 @@ class Associador:
     def associar_ponto_a_linha(self):
         # {`01`: [1, 2, 3], '02': [4, 8, 10]}
         relacionamento = {}
+        if self.linhas is None:
+            raise
         for _, linha in self.linhas.iterrows():
-            nome_linha : str = linha.linha # L001
+            nome_linha : str = linha.linha
             geometria_linha = linha.geometry
             relacionamento[nome_linha] = set()
             pontos_compoe_linhas_onibus = self._linestring_to_array(geometria_linha)
-            distancia = self.euclidean_distance(pontos_compoe_linhas_onibus, self.coords_pontos_onibus, axis = 2)
+            distancia = self.distancia_euclidiana(pontos_compoe_linhas_onibus, self.coords_pontos_onibus, axis = 2) # type: ignore
             relacionamento[nome_linha] = set(np.argmin(distancia, axis = 1))
         return relacionamento
             
@@ -134,8 +138,10 @@ class Associador:
     def associar_residencias_a_pontos(self) -> pd.DataFrame:
         """Associa as residências aos pontos de ônibus mais próximos."""
         associacoes = {'residencia': [], 'ponto_onibus': [], 'distancia': []}
+        if self.coords_residencias is None or self.coords_pontos_onibus is None:
+            raise
         for i, residencia in enumerate(self.coords_residencias):
-            distancias = self.euclidean_distance(
+            distancias = self.distancia_euclidiana(
                 residencia.reshape(1, -1), 
                 self.coords_pontos_onibus
             )

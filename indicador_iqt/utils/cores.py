@@ -1,6 +1,7 @@
 from random import randint
 
-class Colors:
+
+class Cores:
     """
     Define um conjunto padrão de cores em formato hexadecimal para uso em visualizações.
 
@@ -26,18 +27,20 @@ class Colors:
         >>> plt.plot(data, color=Colors.BLUE)
         >>> plt.scatter(x, y, color=Colors.RED)
     """
-    RED = '#d62728'
-    BLUE = '#1f77b4'
-    ORANGE = '#ff7f0e'
-    GREEN = '#2ca02c'
-    PURPLE = '#9467bd'
-    BROWN = '#8c564b'
-    PINK = '#e377c2'
-    GREY = '#7f7f7f'
-    YELLOW = '#bcbd22'
-    CYAN = '#17becf'
 
-def color_iqt(iqt: float) -> str:
+    RED = "#d62728"
+    BLUE = "#1f77b4"
+    ORANGE = "#ff7f0e"
+    GREEN = "#2ca02c"
+    PURPLE = "#9467bd"
+    BROWN = "#8c564b"
+    PINK = "#e377c2"
+    GREY = "#7f7f7f"
+    YELLOW = "#bcbd22"
+    CYAN = "#17becf"
+
+
+def cor_iqt(iqt: float) -> str:
     """
     Determina a cor apropriada com base no valor do IQT (Índice de Qualidade do Transporte).
 
@@ -66,14 +69,15 @@ def color_iqt(iqt: float) -> str:
         '#e377c2'  # Rosa para qualidade muito baixa
     """
     if iqt >= 3.0:
-        return Colors.GREEN
+        return Cores.GREEN
     elif 2 <= iqt < 3.0:
-        return Colors.BLUE
+        return Cores.BLUE
     elif 1.0 <= iqt < 2:
-        return Colors.RED
+        return Cores.RED
     else:
-        return Colors.PINK
-    
-def randon_color() -> str:
+        return Cores.PINK
+
+
+def cor_aleatoria() -> str:
     cor = "#{:06x}".format(randint(0, 0xFFFFFF))
     return cor

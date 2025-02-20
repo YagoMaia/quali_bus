@@ -6,10 +6,10 @@ import pandas as pd
 from shapely import wkt
 from shapely.geometry import LineString
 
-from ..utils.colors import color_iqt, randon_color
+from ..utils.cores import cor_iqt, cor_aleatoria
 
 
-def carregar_layers_lines(path_lines: str) -> gpd.GeoDataFrame:
+def carregar_camadas_linhas(path_lines: str) -> gpd.GeoDataFrame:
     """
     Carrega camadas de linhas de um arquivo KML, excluindo a camada 'Linhas prontas'.
 
@@ -39,7 +39,7 @@ def carregar_layers_lines(path_lines: str) -> gpd.GeoDataFrame:
     return gdf_lines
 
 
-def filter_lines(gdf: gpd.GeoDataFrame) -> pd.DataFrame | pd.Series:
+def filtrar_linhas(gdf: gpd.GeoDataFrame) -> pd.DataFrame | pd.Series:
     """
     Filtra o GeoDataFrame para manter apenas geometrias do tipo LineString.
 
@@ -56,7 +56,7 @@ def filter_lines(gdf: gpd.GeoDataFrame) -> pd.DataFrame | pd.Series:
     return gdf[gdf.geometry.type == "LineString"]
 
 
-def calculate_distances(gdf_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def calcular_distancias(gdf_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     Calcula o comprimento de cada LineString no GeoDataFrame.
 
@@ -80,7 +80,7 @@ def calculate_distances(gdf_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gdf_lines
 
 
-def calculate_distances_2(gdf_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def calcular_distancias_2(gdf_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
     Calcula distâncias em metros e quilômetros usando projeção Web Mercator (EPSG:3857).
 
@@ -110,16 +110,16 @@ def calculate_distances_2(gdf_lines: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gdf_lines.to_crs(4326)
 
 
-def criar_popup(line : pd.Series):
+def criar_popup(line: pd.Series):
     popup_content = """
     <div style="max-width:300px;">
         <h4 style="margin-bottom:10px;">{}</h4>
         <table style="width:100%; border-collapse:collapse;">
     """.format(line.linha)
-    
+
     # Adicionando todas as informações disponíveis na Series
     for idx, value in line.items():
-        if idx != 'geometry':  # Excluindo a coluna de geometria
+        if idx != "geometry":  # Excluindo a coluna de geometria
             value = round(value, 2) if isinstance(value, float) else value
             popup_content += f"""
             <tr style="border-bottom:1px solid #ddd;">
@@ -131,10 +131,11 @@ def criar_popup(line : pd.Series):
         </table>
     </div>
     """
-    
+
     return popup_content
 
-def add_line_to_map(line: pd.Series, group: folium.FeatureGroup, color: str = "") -> None:
+
+def adicionar_linha_ao_mapa(line: pd.Series, group: folium.FeatureGroup, color: str = "") -> None:
     """
     Adiciona uma linha ao mapa Folium com grupo específico.
 
@@ -155,22 +156,22 @@ def add_line_to_map(line: pd.Series, group: folium.FeatureGroup, color: str = ""
 
     Notes
     -----
-    A cor da linha é determinada pela função color_iqt com base no valor do IQT.
+    A cor da linha é determinada pela função cor_iqt com base no valor do IQT.
     """
     # geometry = wkt.loads(line.geometry)
     # tooltip_line = line['linha']
-    color = color if color else randon_color()
+    color = color if color else cor_aleatoria()
     folium.PolyLine(
         locations=[(lat, lon) for lon, lat, *rest in line.geometry.coords],
         color=color,
         weight=2.5,
         opacity=1,
         tooltip=line.linha,
-        popup=criar_popup(line)
+        popup=criar_popup(line),
     ).add_to(group)
 
 
-def add_line_to_map_no_group(line: pd.Series, map_routes: folium.Map) -> None:
+def adicionar_linha_ao_mapa_sem_grupo(line: pd.Series, map_routes: folium.Map) -> None:
     """
     Adiciona uma linha diretamente ao mapa Folium sem agrupamento.
 
@@ -188,13 +189,13 @@ def add_line_to_map_no_group(line: pd.Series, map_routes: folium.Map) -> None:
 
     Notes
     -----
-    Similar a add_line_to_map, mas adiciona a linha diretamente ao mapa
+    Similar a adicionar_linha_ao_mapa, mas adiciona a linha diretamente ao mapa
     sem usar grupos. A linha terá uma espessura maior (weight=3).
     """
     # Extraindo a geometria, tooltip e cor
     geometry = wkt.loads(line.geometry)
     # tooltip_line = line['linha']
-    color = color_iqt(line.iqt)
+    color = cor_iqt(line.iqt)
 
     # Verificando se a geometria é um LineString
     if isinstance(geometry, LineString):

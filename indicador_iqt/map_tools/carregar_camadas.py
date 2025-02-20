@@ -3,7 +3,7 @@ import geopandas as gpd
 import pandas as pd
 
 
-def carregar_routes(file_path: str) -> pd.DataFrame:
+def carregar_rotas(file_path: str) -> pd.DataFrame:
     """
     Carrega rotas de transporte público a partir de um arquivo KML.
 
@@ -32,7 +32,7 @@ def carregar_routes(file_path: str) -> pd.DataFrame:
 
     Examples
     --------
-    >>> gdf_routes = carregar_routes('caminho/para/rotas.kml')
+    >>> gdf_routes = carregar_rotas('caminho/para/rotas.kml')
     >>> print(gdf_routes.columns)
     Index(['geometry', 'Description', 'linha', 'sentido'])
 
@@ -46,8 +46,8 @@ def carregar_routes(file_path: str) -> pd.DataFrame:
         Se o arquivo não contiver as colunas esperadas
     """
     # Habilita suporte ao driver KML
-    fiona.drvsupport.supported_drivers["libkml"] = "rw"
-    fiona.drvsupport.supported_drivers["LIBKML"] = "rw"
+    # fiona.supported_drivers["libkml"] = "rw"
+    # fiona.supported_drivers["LIBKML"] = "rw"
 
     # Carrega todas as camadas
     gdf_list = []
@@ -58,13 +58,13 @@ def carregar_routes(file_path: str) -> pd.DataFrame:
     # Concatena e processa os dados
     gdf = gpd.GeoDataFrame(pd.concat(gdf_list, ignore_index=True))
     gdf = gdf.query("Description != ''")
-    gdf[["linha", "sentido"]] = gdf["Name"].str.split(" - ", expand=True)
+    gdf[["linha", "sentido"]] = gdf["Name"].str.split(" - ", expand=True) # type: ignore
     del gdf["Name"]
 
     return gdf
 
 
-def carregar_neighborhoods(file_path: str) -> gpd.GeoDataFrame:
+def carregar_bairros(file_path: str) -> gpd.GeoDataFrame:
     """
     Carrega os bairros da cidade a partir de um arquivo geoespacial.
 
@@ -87,7 +87,7 @@ def carregar_neighborhoods(file_path: str) -> gpd.GeoDataFrame:
 
     Examples
     --------
-    >>> gdf_neighborhoods = carregar_neighborhoods('caminho/para/bairros.shp')
+    >>> gdf_neighborhoods = carregar_bairros('caminho/para/bairros.shp')
     >>> print(gdf_neighborhoods.crs)
 
     Raises
@@ -100,4 +100,4 @@ def carregar_neighborhoods(file_path: str) -> gpd.GeoDataFrame:
     gdf_city = gpd.read_file(file_path)
     # Código comentado para possível reprojeção futura
     # gdf_city = gdf_city.to_crs(epsg=3857)
-    return gdf_city
+    return gpd.GeoDataFrame(gdf_city)

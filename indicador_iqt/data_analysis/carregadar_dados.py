@@ -18,16 +18,16 @@ def carregar_data(file_path: str) -> pd.DataFrame:
         - hsstart: datetime - Horário de início
         - hsstop: datetime - Horário de término
         - duracao: timedelta - Duração calculada (hsstop - hsstart)
-        - datai: datetime - Data inicial
+        - data: datetime - Data inicial
         - dataf: datetime - Data final
         - duracao_minutos: int - Duração em minutos
 
     Notes
     -----
-    O arquivo CSV deve conter as colunas: 'hsstart', 'hsstop', 'datai', 'dataf'
+    O arquivo CSV deve conter as colunas: 'hsstart', 'hsstop', 'data', 'dataf'
     com os seguintes formatos:
     - hsstart, hsstop: "%H:%M:%S"
-    - datai, dataf: "%d/%m/%Y"
+    - data, dataf: "%d/%m/%Y"
     """
     df = pd.read_csv(file_path, delimiter=",")
 
@@ -35,7 +35,7 @@ def carregar_data(file_path: str) -> pd.DataFrame:
     df["hsstart"] = pd.to_datetime(df["hsstart"], format="%H:%M:%S")
     df["hsstop"] = pd.to_datetime(df["hsstop"], format="%H:%M:%S")
     df["duracao"] = df["hsstop"] - df["hsstart"]
-    df["datai"] = pd.to_datetime(df["datai"], format="%d/%m/%Y")
+    df["data"] = pd.to_datetime(df["data"], format="%d/%m/%Y")
     df["dataf"] = pd.to_datetime(df["dataf"], format="%d/%m/%Y")
     df["duracao_minutos"] = df["duracao"].dt.total_seconds() // 60
     df["duracao_minutos"] = df["duracao_minutos"].astype(int)
@@ -114,6 +114,4 @@ def carregar_planned_trips(file_path: str) -> pd.DataFrame:
         agrupado["sem_horario"] + agrupado["com_horario"]
     )
 
-    # # Exibe o resultado
-    # print(agrupado[['sem_horario', 'com_horario', 'proporcao_sem_horario']])
     return agrupado

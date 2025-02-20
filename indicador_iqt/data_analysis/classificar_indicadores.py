@@ -1,9 +1,10 @@
 import pandas as pd
 
-class IndicadoresClassificator:
+
+class ClassificarIndicadores:
     """
     Classe para classificar os indicadores de qualidade do transporte público.
-    
+
     Esta classe contém métodos para calcular o Índice de Qualidade do Transporte (IQT)
     e avaliar diferentes aspectos do serviço de transporte público, como pontualidade,
     infraestrutura e atendimento.
@@ -16,7 +17,6 @@ class IndicadoresClassificator:
         - 'prioridade': Lista de pesos para cada indicador
         - 'indicador': Lista com descrições dos indicadores
     """
-
 
     def pontualidade_pontuacao(self, pontualidade: float) -> int:
         """
@@ -44,8 +44,8 @@ class IndicadoresClassificator:
             return 1
         else:
             return 0
-        
-    def abrangencia_rede(self, proporcao : float):
+
+    def abrangencia_rede_pontuacao(self, proporcao: float):
         if proporcao == 1.0:
             return 3
         elif 0.95 < proporcao <= 0.99:
@@ -55,7 +55,7 @@ class IndicadoresClassificator:
         else:
             return 0
 
-    def porcentagem_vias_pavimentadas(self, porcentagem: float) -> int:
+    def porcentagem_vias_pavimentadas_pontuacao(self, porcentagem: float) -> int:
         """
         Calcula a pontuação para o indicador de vias pavimentadas.
 
@@ -82,7 +82,7 @@ class IndicadoresClassificator:
         else:
             return 0
 
-    def distancia_pontos(self, distancia: float) -> int:
+    def distancia_pontos_pontuacao(self, distancia: float) -> int:
         """
         Calcula a pontuação para o indicador de distância entre pontos.
 
@@ -109,7 +109,7 @@ class IndicadoresClassificator:
         else:
             return 0
 
-    def integracao_municipal(self, integracao: str) -> int:
+    def integracao_municipal_pontuacao(self, integracao: str) -> int:
         """
         Calcula a pontuação para o indicador de integração municipal.
 
@@ -128,16 +128,16 @@ class IndicadoresClassificator:
             - 0: integracao < 0.85
         """
         match integracao.strip():
-            case 'Sistema de transporte público totalmente integrado com terminais com o uso de bilhete eletrônico para integração intra e intermodal':
+            case "Sistema de transporte público totalmente integrado com terminais com o uso de bilhete eletrônico para integração intra e intermodal":
                 return 3
-            case 'Sistema de transporte público totalmente integrado com terminais com o uso de bilhete eletrônico para integração intramodal somente':
+            case "Sistema de transporte público totalmente integrado com terminais com o uso de bilhete eletrônico para integração intramodal somente":
                 return 2
-            case 'Integração tarifária temporal ocorre em determinados pontos, apenas com transferências intramodais':
+            case "Integração tarifária temporal ocorre em determinados pontos, apenas com transferências intramodais":
                 return 1
             case _:
                 return 0
 
-    def frequencia_atendimento(self, frequencia: float) -> int:
+    def frequencia_atendimento_pontuacao(self, frequencia: float) -> int:
         """
         Calcula a pontuação para o indicador de frequência de atendimento.
 
@@ -164,7 +164,7 @@ class IndicadoresClassificator:
         else:
             return 0
 
-    def cumprimento_itinerarios(self, etinerario: float) -> int:
+    def cumprimento_itinerarios_pontuacao(self, etinerario: float) -> int:
         """
         Calcula a pontuação para o indicador de cumprimento de itinerários.
 
@@ -191,7 +191,7 @@ class IndicadoresClassificator:
         else:
             return 0
 
-    def treinamento_capacitacao(self, treinamento: float) -> int:
+    def treinamento_capacitacao_pontuacao(self, treinamento: float) -> int:
         """
         Calcula a pontuação para o indicador de treinamento e capacitação.
 
@@ -217,30 +217,30 @@ class IndicadoresClassificator:
             return 1
         else:
             return 0
-        
-    def informacao_internet(self, informacao : str) -> int:
+
+    def informacao_internet_pontuacao(self, informacao: str) -> int:
         match informacao:
-            case 'Possuir informações em site e aplicativo atualizados':
+            case "Possuir informações em site e aplicativo atualizados":
                 return 3
-            case 'Possuir informações em site parcialmente atualizado':
+            case "Possuir informações em site parcialmente atualizado":
                 return 2
-            case 'Possuir informação em site desatualizado':
-                return 1
-            case _:
-                return 0
-            
-    def valor_tarifa(self, informacao_tarifa : str) -> int:
-        match informacao_tarifa:
-            case 'Não houve aumento da tarifa ':
-                return 3
-            case 'Aumento inferior ao índice':
-                return 2
-            case 'Aumento equivalente ao índice':
+            case "Possuir informação em site desatualizado":
                 return 1
             case _:
                 return 0
 
-    def classificacao_iqt(self, iqt: float) -> str:
+    def valor_tarifa_pontuacao(self, informacao_tarifa: str) -> int:
+        match informacao_tarifa:
+            case "Não houve aumento da tarifa ":
+                return 3
+            case "Aumento inferior ao índice":
+                return 2
+            case "Aumento equivalente ao índice":
+                return 1
+            case _:
+                return 0
+
+    def classificacao_iqt_pontuacao(self, iqt: float) -> str:
         """
         Classifica o IQT em categorias qualitativas.
 
@@ -259,42 +259,42 @@ class IndicadoresClassificator:
             - 'Insuficiente': iqt < 1.0
         """
         if iqt >= 3.0:
-            return 'Excelente'
+            return "Excelente"
         elif 2 <= iqt < 3.0:
-            return 'Bom'
+            return "Bom"
         elif 1.0 <= iqt < 2:
-            return 'Suficiente'
+            return "Suficiente"
         else:
-            return 'Insuficiente'
-    
+            return "Insuficiente"
+
     def classificar_linhas(self, dados_linhas: pd.DataFrame) -> pd.DataFrame:
         classificacao = {
-            'linha': [],
-            'I1': [],
-            'I2': [],
-            'I3': [],
-            'I4': [],
-            'I5': [],
-            'I6': [],
-            'I7': [],
-            'I8': [],
-            'I9': [],
-            'I10': [],
+            "linha": [],
+            "I1": [],
+            "I2": [],
+            "I3": [],
+            "I4": [],
+            "I5": [],
+            "I6": [],
+            "I7": [],
+            "I8": [],
+            "I9": [],
+            "I10": [],
         }
 
         # Itera pelas linhas do DataFrame e calcula as pontuações
         for _, linha in dados_linhas.iterrows():
-            classificacao['linha'].append(linha['linha'])
-            classificacao['I1'].append(self.porcentagem_vias_pavimentadas(linha['via_pavimentada']))
-            classificacao['I2'].append(self.distancia_pontos(linha['distancia']))
-            classificacao['I3'].append(self.integracao_municipal(linha['integracao']))
-            classificacao['I4'].append(self.pontualidade_pontuacao(linha['pontualidade']))
-            classificacao['I5'].append(self.frequencia_atendimento(linha['frequencia_atendimento']))
-            classificacao['I6'].append(self.cumprimento_itinerarios(linha['cumprimento_itinerario']))
-            classificacao['I7'].append(self.abrangencia_rede(linha['proporcao']))
-            classificacao['I8'].append(self.treinamento_capacitacao(linha['treinamento_motorista']))
-            classificacao['I9'].append(self.informacao_internet(linha['informacao_internet']))
-            classificacao['I10'].append(self.valor_tarifa(linha['valor_tarifa']))
+            classificacao["linha"].append(linha["linha"])
+            classificacao["I1"].append(self.porcentagem_vias_pavimentadas_pontuacao(linha["via_pavimentada"]))
+            classificacao["I2"].append(self.distancia_pontos_pontuacao(linha["distancia"]))
+            classificacao["I3"].append(self.integracao_municipal_pontuacao(linha["integracao"]))
+            classificacao["I4"].append(self.pontualidade_pontuacao(linha["pontualidade"]))
+            classificacao["I5"].append(self.frequencia_atendimento_pontuacao(linha["frequencia_atendimento_pontuacao"]))
+            classificacao["I6"].append(self.cumprimento_itinerarios_pontuacao(linha["cumprimento_itinerario"]))
+            classificacao["I7"].append(self.abrangencia_rede_pontuacao(linha["proporcao"]))
+            classificacao["I8"].append(self.treinamento_capacitacao_pontuacao(linha["treinamento_motorista"]))
+            classificacao["I9"].append(self.informacao_internet_pontuacao(linha["informacao_internet"]))
+            classificacao["I10"].append(self.valor_tarifa_pontuacao(linha["valor_tarifa"]))
 
         # Converte o dicionário em DataFrame
         return pd.DataFrame(classificacao)

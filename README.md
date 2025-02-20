@@ -11,21 +11,25 @@ Antes de utilizar a biblioteca, certifique-se de instalar as dependências neces
 ```bash
 pip install -r requirements.txt
 ```
+
 ## 🚀 Como Usar
+
 🔹 1. Importação da Biblioteca
 
 ```python
-from indicador_iqt import IndicadoresCalculator
+from indicador_iqt import CalcularIndicadores
 ```
 
 🔹 2. Inicializando a Classe
+
 ```python
-calc = IndicadoresCalculator()
+calc = CalcularIndicadores()
 ```
 
 🔹 3. Carregando os Dados
 
 Os dados podem ser carregados a partir de um `pandas.DataFrame` ou `geopandas.GeoDataFrame`:
+
 ```python
 import pandas as pd
 import geopandas as gpd
@@ -47,7 +51,7 @@ A biblioteca suporta o cálculo de diversos indicadores de qualidade do transpor
 
 ```python
 # Cálculo do tempo médio de operação
-tempo_medio = calc.frequencia_atendimento(df_frequencia)
+tempo_medio = calc.frequencia_atendimento_pontuacao(df_frequencia)
 print(tempo_medio)
 
 # Cálculo da pontualidade
@@ -60,20 +64,21 @@ print(cumprimento)
 ```
 
 🔹 5. Cálculo do Índice IQT
+
 ```python
 linha_indicadores = [0.8, 0.7, 0.6, 0.9, 0.85, 0.75, 0.65, 0.7, 0.5, 0.6]
-iqt = calc.calcula_iqt(linha_indicadores)
+iqt = calc.calcular_iqt(linha_indicadores)
 print(f"Índice IQT: {iqt}")
 ```
 
-| Método | Descrição |
-| ---    | ---       |
-| `load_dados_linha(df)` | Carrega os dados das linhas e converte WKT para LineString. |
-| `frequencia_atendimento(df)` | Calcula o tempo médio de operação por rota. |
-| `calcular_pontualidade(df)` | Calcula a pontuação para o indicador de pontualidade. |
-| `cumprimento_itinerario(df)` | Calcula o cumprimento de itinerário por quilometragem. |
-| `calcula_iqt(lista_indicadores)` | Calcula o Índice de Qualidade do Transporte (IQT). |
-| `processar_iqt()` | Processa os cálculos do IQT e gera classificações. |
+| Método                                 | Descrição                                                   |
+| -------------------------------------- | ----------------------------------------------------------- |
+| `load_dados_linha(df)`                 | Carrega os dados das linhas e converte WKT para LineString. |
+| `frequencia_atendimento_pontuacao(df)` | Calcula o tempo médio de operação por rota.                 |
+| `calcular_pontualidade(df)`            | Calcula a pontuação para o indicador de pontualidade.       |
+| `cumprimento_itinerario(df)`           | Calcula o cumprimento de itinerário por quilometragem.      |
+| `calcular_iqt(lista_indicadores)`      | Calcula o Índice de Qualidade do Transporte (IQT).          |
+| `processar_iqt()`                      | Processa os cálculos do IQT e gera classificações.          |
 
 ## 🤝 Contribuindo
 

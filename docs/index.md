@@ -58,9 +58,9 @@ Adiciona linhas de rotas ao mapa interativo, com opções de cor e opacidade par
 
 python
 
-from map_tools import add_line_to_map
+from map_tools import adicionar_linha_ao_mapa
 
-add_line_to_map(m, 'Nome_da_Linha', geometry, color='#FF5733')
+adicionar_linha_ao_mapa(m, 'Nome_da_Linha', geometry, color='#FF5733')
 
 Exemplo de Uso
 
@@ -68,7 +68,7 @@ Abaixo, um exemplo de uso da biblioteca para criar um mapa com dados de linhas d
 
 python
 
-from map_tools import carregar_geospatial_data, create_map, add_line_to_map, save_map
+from map_tools import carregar_geospatial_data, create_map, adicionar_linha_ao_mapa, save_map
 
 # Carregar dados geoespaciais
 
@@ -85,7 +85,7 @@ m = create_map(gdf_filtered, location=[-16.737, -43.8647], zoom_start=12)
 # Adicionar linhas de rota
 
 for index, row in gdf_filtered.iterrows():
-add_line_to_map(m, row['Name'], row.geometry, color='blue')
+adicionar_linha_ao_mapa(m, row['Name'], row.geometry, color='blue')
 
 # Salvar o mapa
 

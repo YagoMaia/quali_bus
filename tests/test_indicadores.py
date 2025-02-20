@@ -1,15 +1,15 @@
 import pandas as pd
 import pytest
 
-from indicador_iqt.data_analysis.calculate_indicator import IndicadoresCalculator
+from indicador_iqt.data_analysis.calcular_indicadores import CalcularIndicadores
 
 
 @pytest.fixture
 def calculator():
     """
-    Fixture para criar uma instância da classe IndicadoresCalculator.
+    Fixture para criar uma instância da classe CalcularIndicadores.
     """
-    return IndicadoresCalculator()
+    return CalcularIndicadores()
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def sample_lines():
 
 
 @pytest.fixture
-def sample_frequencia_atendimento():
+def sample_frequencia_atendimento_pontuacao():
     """
     Fixture para criar um DataFrame de frequência de atendimento.
     """
@@ -42,7 +42,7 @@ def sample_frequencia_atendimento():
         "linha": ["4601", "4601", "4601"],
         "hsstart": ["06:07:57", "06:07:59", "06:10:59"],
         "hsstop": ["06:10:57", "06:15:59", "06:19:59"],
-        "datai": ["01/01/2024", "01/01/2024", "01/01/2024"],
+        "data": ["01/01/2024", "01/01/2024", "01/01/2024"],
         "dataf": ["01/01/2024", "01/01/2024", "01/01/2024"],
         "qtpsg": [13, 11, 9],
         "valor_jornada": [13, 11, 9],
@@ -105,18 +105,20 @@ def test_carregar_cumprimento(calculator, sample_cumprimento):
     )
 
 
-def test_carregar_frequencia_atendimento(calculator, sample_frequencia_atendimento):
+def test_carregar_frequencia_atendimento_pontuacao(
+    calculator, sample_frequencia_atendimento_pontuacao
+):
     """
-    Testa o método `carregar_frequencia_atendimento` para carregar frequência de atendimento.
+    Testa o método `carregar_frequencia_atendimento_pontuacao` para carregar frequência de atendimento.
     """
-    frequencia = calculator.carregar_frequencia_atendimento(
-        sample_frequencia_atendimento
+    frequencia = calculator.carregar_frequencia_atendimento_pontuacao(
+        sample_frequencia_atendimento_pontuacao
     )
 
     assert not frequencia.empty, "O DataFrame de frequência não deveria estar vazio"
     assert "linha" in frequencia.columns, "A coluna 'linha' deve estar presente"
-    assert "frequencia_atendimento" in frequencia.columns, (
-        "A coluna 'frequencia_atendimento' deve estar presente"
+    assert "frequencia_atendimento_pontuacao" in frequencia.columns, (
+        "A coluna 'frequencia_atendimento_pontuacao' deve estar presente"
     )
 
 
@@ -146,14 +148,14 @@ def test_cumprimento_itinerario(calculator, sample_cumprimento):
     )
 
 
-def test_calcula_iqt(calculator):
+def test_calcular_iqt(calculator):
     """
-    Testa o método `calcula_iqt` para calcular o Índice de Qualidade do Transporte.
+    Testa o método `calcular_iqt` para calcular o Índice de Qualidade do Transporte.
     """
     # Criando uma lista de valores de indicadores
     indicadores = [1, 0.8, 0.9, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
 
-    iqt = calculator.calcula_iqt(indicadores)
+    iqt = calculator.calcular_iqt(indicadores)
 
     assert isinstance(iqt, float), (
         "O resultado do IQT deve ser um número de ponto flutuante"
@@ -163,7 +165,7 @@ def test_calcula_iqt(calculator):
 def test_carregar_dados(
     calculator,
     sample_lines,
-    sample_frequencia_atendimento,
+    sample_frequencia_atendimento_pontuacao,
     sample_pontualidade,
     sample_cumprimento,
 ):
@@ -172,7 +174,7 @@ def test_carregar_dados(
     """
     calculator.carregar_dados(
         sample_lines,
-        sample_frequencia_atendimento,
+        sample_frequencia_atendimento_pontuacao,
         sample_pontualidade,
         sample_cumprimento,
     )
