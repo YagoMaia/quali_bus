@@ -6,7 +6,8 @@ import pandas as pd
 from shapely.geometry import LineString, Point
 from shapely.wkt import loads
 
-from ..utils import Associador, modelos
+from ..utils import Associador
+from ..utils import modelos
 from ..utils.cores import cor_iqt
 from .classificar_indicadores import ClassificarIndicadores
 
@@ -71,24 +72,14 @@ class CalcularIndicadores:
             ],
         }
 
-    def carregar_dados(
-        self,
-        df_linhas: pd.DataFrame,
-        df_frequencia: pd.DataFrame,
-        df_pontualidade: pd.DataFrame,
-        df_cumprimento: pd.DataFrame,
-    ):
+    def carregar_dados(self, df_linhas: pd.DataFrame, df_frequencia: pd.DataFrame, df_pontualidade: pd.DataFrame, df_cumprimento: pd.DataFrame):
         self.dados_linhas = self.carregar_dados_linha(df_linhas)
         self.frequencia = self.carregar_frequencia_atendimento_pontuacao(df_frequencia)
         self.pontualidade = self.carregar_pontualidade(df_pontualidade)
         self.cumprimento = self.carregar_cumprimento(df_cumprimento)
 
-    def carregar_dados_geometrias(
-        self, df_pontos_onibus: pd.DataFrame, df_residencias: pd.DataFrame
-    ):
-        self.associador = Associador(
-            df_pontos_onibus, self.dados_linhas, df_residencias
-        )  # type: ignore
+    def carregar_dados_geometrias(self, df_pontos_onibus: pd.DataFrame, df_residencias: pd.DataFrame):
+        self.associador = Associador(df_pontos_onibus, self.dados_linhas.copy(), df_residencias)
         self.dados_geograficos = self.associador.consolidar_associacoes()
 
     def carregar_dados_linha(self, df_line: pd.DataFrame) -> gpd.GeoDataFrame:
@@ -125,12 +116,7 @@ class CalcularIndicadores:
             lambda x: isinstance(x, str) and x.startswith("LINESTRING")
         )
 
-    def _converter_geometry_para_linestring(
-        self,
-        df: pd.DataFrame,
-        coluna: str = "geometry",
-        crs: Optional[str] = "EPSG:4326",
-    ) -> gpd.GeoDataFrame:
+    def _converter_geometry_para_linestring (self, df: pd.DataFrame, coluna: str = "geometry", crs: Optional[str] = "EPSG:4326") -> gpd.GeoDataFrame:
         """
         Converte strings WKT em objetos LineString 2D e retorna um GeoDataFrame.
 
@@ -173,9 +159,7 @@ class CalcularIndicadores:
 
         return gdf
 
-    def _cria_geometry_pontos_rota(
-        self, df: gpd.GeoDataFrame, coluna: str = "geometry"
-    ) -> gpd.GeoDataFrame:
+    def _cria_geometry_pontos_rota(self, df: gpd.GeoDataFrame, coluna: str = "geometry") -> gpd.GeoDataFrame:
         """
         Cria um geometry com os pontos da LineString e adiciona-os ao DataFrame.
 
@@ -244,9 +228,7 @@ class CalcularIndicadores:
             print("Erro ao carregar dados de cumprimento: ", error)
             return pd.DataFrame()
 
-    def carregar_frequencia_atendimento_pontuacao(
-        self, df_frequencia: pd.DataFrame
-    ) -> pd.DataFrame:
+    def carregar_frequencia_atendimento_pontuacao(self, df_frequencia: pd.DataFrame) -> pd.DataFrame:
         """
         Carrega os dados de frequência de atendimento a partir de um DataFrame.
         """
@@ -327,9 +309,7 @@ class CalcularIndicadores:
             print("Erro ao calcular pontualidade: ", error)
             return pd.DataFrame()
 
-    def frequencia_atendimento_pontuacao(
-        self, df_frequencia: pd.DataFrame
-    ) -> pd.DataFrame:
+    def frequencia_atendimento_pontuacao(self, df_frequencia: pd.DataFrame) -> pd.DataFrame:
         """Calcula o tempo médio de operação por rota (linha).
 
         Args:
