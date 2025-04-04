@@ -299,19 +299,15 @@ class CalcularIndicadores:
 		try:
 			if not isinstance(self.dados_linhas, gpd.GeoDataFrame):
 				raise
-			# Armazenar o CRS original
 			crs_original = self.dados_linhas.crs
 
-			# Converter para o CRS necessário para cálculo de distâncias
 			self.dados_linhas = self.dados_linhas.to_crs(epsg=31983)
 
 			if not isinstance(self.dados_linhas, gpd.GeoDataFrame):
 				raise
 
-			# Calcular a distância em quilômetros
 			self.dados_linhas["distancia_km"] = self.dados_linhas.length / 1000
 
-			# Reverter para o CRS original
 			self.dados_linhas = self.dados_linhas.to_crs(crs_original)
 
 			if not isinstance(self.dados_linhas, gpd.GeoDataFrame):
@@ -347,18 +343,13 @@ class CalcularIndicadores:
 			float: Valor do IQT calculado.
 		"""
 		try:
-			# Multiplicando indicadores pelo peso de cada um
-			# valores_indicadores = linha
 			prioridades = self.indicadores_prioridades["prioridade"]
 			soma_ponderada = np.dot(linha, prioridades)
 
-			# Calculando o desvio padrão das prioridades
 			desvio_padrao_prioridades = np.std(prioridades)
 
-			# Calculando o IQT
 			iqt = soma_ponderada / (desvio_padrao_prioridades * len(prioridades))
 			return iqt
-
 		except Exception as e:
 			print(f"Erro ao calcular IQT: {e}")
 			return 0.0

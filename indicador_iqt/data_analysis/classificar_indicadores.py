@@ -167,6 +167,25 @@ class ClassificarIndicadores:
 		else:
 			return "Insuficiente"
 
+	def cumprimento_itinerarios_pontuacao(self, etinerario: float) -> int:
+		"""
+		Calcula a pontuação para o indicador de cumprimento de etinerários.
+
+		Args:
+			etinerario (float): Valor do cumprimento de etinerários.
+
+		Returns:
+			int: Pontuação atribuída:
+		"""
+		if 1 <= etinerario:
+			return 3
+		elif 0.8 <= etinerario <= 0.9:
+			return 2
+		elif 0.5 <= etinerario <= 0.7:
+			return 1
+		else:
+			return 0
+
 	def informacao_internet_pontuacao(self, informacao: str) -> int:
 		"""Retorna a pontuação com base na atualização das informações online.
 
@@ -224,7 +243,7 @@ class ClassificarIndicadores:
 			classificacao["I3"].append(self.integracao_municipal_pontuacao(linha["integracao"]))
 			classificacao["I4"].append(self.pontualidade_pontuacao(linha["pontualidade"]))
 			classificacao["I5"].append(self.frequencia_atendimento_pontuacao(linha["frequencia_atendimento_pontuacao"]))
-			classificacao["I6"].append(self.classificacao_iqt_pontuacao(linha["iqt"]))
+			classificacao["I6"].append(self.cumprimento_itinerarios_pontuacao(linha["cumprimento_itinerario"]))
 			classificacao["I7"].append(self.abrangencia_rede_pontuacao(linha["proporcao"]))
 			classificacao["I8"].append(self.treinamento_capacitacao_pontuacao(linha["treinamento_motorista"]))
 			classificacao["I9"].append(self.informacao_internet_pontuacao(linha["informacao_internet"]))
