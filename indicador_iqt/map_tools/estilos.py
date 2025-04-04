@@ -7,7 +7,7 @@
 #         </div>
 #     </div>
 #     """
-    
+
 #     # Adiciona elementos específicos da legenda para as linhas insuficientes
 #     legenda_html += """
 #     <div style="position: fixed; top : 250px; right: 150px; width: 250px; height: auto; border:2px solid grey;

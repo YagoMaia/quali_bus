@@ -89,29 +89,17 @@ def carregar_planned_trips(file_path: str) -> pd.DataFrame:
 
 	df_rastreamento_tratado = df_rastreamento.drop(colunas_desnecessarias, axis=1)
 
-	df_rastreamento_tratado[["linha", "sentido"]] = df_rastreamento_tratado[
-		"Trajeto"
-	].str.extract(r"(\d+)\s*-\s*.*\((ida|volta)\)")
+	df_rastreamento_tratado[["linha", "sentido"]] = df_rastreamento_tratado["Trajeto"].str.extract(r"(\d+)\s*-\s*.*\((ida|volta)\)")
 
 	df_rastreamento_tratado = df_rastreamento_tratado.drop("Trajeto", axis=1)
 	df_rastreamento_tratado.replace("-", pd.NA, inplace=True)
-	df_rastreamento_tratado["com_horario"] = (
-		df_rastreamento_tratado[["Chegada ao ponto", "Partida Real", "Chegada Real"]]
-		.notna()
-		.any(axis=1)
-	)
-	agrupado = (
-		df_rastreamento_tratado.groupby(["linha", "sentido"])["com_horario"]
-		.value_counts(normalize=False)
-		.unstack(fill_value=0)
-	)
+	df_rastreamento_tratado["com_horario"] = df_rastreamento_tratado[["Chegada ao ponto", "Partida Real", "Chegada Real"]].notna().any(axis=1)
+	agrupado = df_rastreamento_tratado.groupby(["linha", "sentido"])["com_horario"].value_counts(normalize=False).unstack(fill_value=0)
 
 	# # Renomeia as colunas para maior clareza
 	agrupado.columns = ["sem_horario", "com_horario"]
 
 	# # Calcula a proporção de viagens sem horário sobre o total de viagens para cada grupo
-	agrupado["proporcao_sem_horario"] = agrupado["com_horario"] / (
-		agrupado["sem_horario"] + agrupado["com_horario"]
-	)
+	agrupado["proporcao_sem_horario"] = agrupado["com_horario"] / (agrupado["sem_horario"] + agrupado["com_horario"])
 
 	return agrupado
