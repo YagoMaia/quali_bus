@@ -55,8 +55,7 @@ def cor_iqt(iqt: float) -> str:
 		iqt (float): Valor do Índice de Qualidade do Transporte.
 
 	Returns:
-		str: Código hexadecimal da cor correspondente ao valor IQT,
-			 utilizando as cores definidas na classe Colors.
+		str: Código hexadecimal da cor correspondente ao valor IQT, utilizando as cores definidas na classe Colors.
 
 	Examples:
 		>>> color_iqt(3.5)

@@ -3,8 +3,7 @@ import pandas as pd
 
 
 def validar_dataframe(df: pd.DataFrame) -> bool:
-	"""
-	Valida um DataFrame para garantir que contenha as colunas necessárias com os tipos de dados corretos.
+	"""Valida um DataFrame para garantir que contenha as colunas necessárias com os tipos de dados corretos.
 
 	Esta função verifica se o DataFrame fornecido contém todas as colunas definidas em
 	REQUIRED_COLUMNS e se cada coluna possui o tipo de dado esperado. A validação é
@@ -41,7 +40,6 @@ def validar_dataframe(df: pd.DataFrame) -> bool:
 		>>> validar_dataframe(invalid_data)
 		ValueError: DataFrame está faltando colunas: ['Latitude']
 	"""
-
 	REQUIRED_COLUMNS = {"Name": str, "Latitude": float, "Longitude": float}
 
 	# Verifica se as colunas esperadas estão presentes

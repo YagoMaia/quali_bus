@@ -119,8 +119,7 @@ def agrupar_por_dia(df: pd.DataFrame) -> pd.DataFrame:
 	"""Agrupa dados de passageiros e valor arrecadado por dia e por rota.
 
 	Args:
-		df (pd.DataFrame): DataFrame contendo as colunas 'data' para data, 'linha' para rota,
-			'qtpsg' para quantidade de passageiros e 'valor_jornada' para valor arrecadado.
+		df (pd.DataFrame): DataFrame contendo as colunas 'data' para data, 'linha' para rota, 'qtpsg' para quantidade de passageiros e 'valor_jornada' para valor arrecadado.
 
 	Returns:
 		pd.DataFrame: DataFrame com o total de passageiros e valor arrecadado agrupado por dia e por rota.
@@ -138,8 +137,7 @@ def agrupar_duracao_por_mes(df: pd.DataFrame) -> pd.DataFrame:
 	"""Agrupa a duração média das viagens por mês e por rota.
 
 	Args:
-		df (pd.DataFrame): DataFrame contendo a coluna 'data' para data e 'linha' para rota,
-			e 'duracao_minutos' para duração das viagens em minutos.
+		df (pd.DataFrame): DataFrame contendo a coluna 'data' para data e 'linha' para rota, e 'duracao_minutos' para duração das viagens em minutos.
 
 	Returns:
 		pd.DataFrame: DataFrame com a duração média das viagens por mês e rota.

@@ -8,33 +8,17 @@ class ClassificarIndicadores:
 	Esta classe contém métodos para calcular o Índice de Qualidade do Transporte (IQT)
 	e avaliar diferentes aspectos do serviço de transporte público, como pontualidade,
 	infraestrutura e atendimento.
-
-	Attributes
-	----------
-	indicadores_prioridades : dict
-		Dicionário contendo as informações dos indicadores com as seguintes chaves:
-		- 'nomeclatura': Lista de códigos dos indicadores (I1, I2, etc.)
-		- 'prioridade': Lista de pesos para cada indicador
-		- 'indicador': Lista com descrições dos indicadores
 	"""
 
 	def pontualidade_pontuacao(self, pontualidade: float) -> int:
 		"""
 		Calcula a pontuação para o indicador de pontualidade.
 
-		Parameters
-		----------
-		pontualidade : float
-			Valor entre 0 e 1 representando a taxa de pontualidade.
+		Args:
+			pontualidade (float): Valor entre 0 e 1 representando a taxa de pontualidade.
 
-		Returns
-		-------
-		int
-			Pontuação atribuída:
-			- 3: pontualidade >= 0.95
-			- 2: 0.90 <= pontualidade < 0.95
-			- 1: 0.80 <= pontualidade < 0.90
-			- 0: pontualidade < 0.80
+		Returns:
+			int: Pontuação atribuída de acordo com a taxa de pontualidade.
 		"""
 		if 0.95 <= pontualidade:
 			return 3
@@ -45,7 +29,16 @@ class ClassificarIndicadores:
 		else:
 			return 0
 
-	def abrangencia_rede_pontuacao(self, proporcao: float):
+	def abrangencia_rede_pontuacao(self, proporcao: float) -> int:
+		"""
+		Calcula a pontuação para o indicador de abrangência da rede de transporte.
+
+		Args:
+			proporcao (float): Proporção da cobertura da rede.
+
+		Returns:
+			int: Pontuação atribuída com base na cobertura da rede.
+		"""
 		if proporcao == 1.0:
 			return 3
 		elif 0.95 < proporcao <= 0.99:
@@ -59,19 +52,11 @@ class ClassificarIndicadores:
 		"""
 		Calcula a pontuação para o indicador de vias pavimentadas.
 
-		Parameters
-		----------
-		porcentagem : float
-			Valor entre 0 e 1 representando a porcentagem de vias pavimentadas.
+		Args:
+			porcentagem (float): Valor entre 0 e 1 representando a porcentagem de vias pavimentadas.
 
-		Returns
-		-------
-		int
-			Pontuação atribuída:
-			- 3: porcentagem >= 1
-			- 2: 0.95 <= porcentagem < 0.99
-			- 1: 0.85 <= porcentagem < 0.95
-			- 0: porcentagem < 0.85
+		Returns:
+			int: Pontuação atribuída com base na proporção de vias pavimentadas.
 		"""
 		if 1 <= porcentagem:
 			return 3
@@ -84,21 +69,13 @@ class ClassificarIndicadores:
 
 	def distancia_pontos_pontuacao(self, distancia: float) -> int:
 		"""
-		Calcula a pontuação para o indicador de distância entre pontos.
+		Calcula a pontuação para o indicador de distância entre pontos de parada.
 
-		Parameters
-		----------
-		distancia : float
-			Distância em metros entre os pontos de parada.
+		Args:
+			distancia (float): Distância em metros entre os pontos de parada.
 
-		Returns
-		-------
-		int
-			Pontuação atribuída:
-			- 3: distancia >= 100
-			- 2: 100 <= distancia < 200
-			- 1: 200 <= distancia < 400
-			- 0: caso contrário
+		Returns:
+			int: Pontuação atribuída com base na distância entre pontos.
 		"""
 		if 100 >= distancia:
 			return 3
@@ -113,19 +90,11 @@ class ClassificarIndicadores:
 		"""
 		Calcula a pontuação para o indicador de integração municipal.
 
-		Parameters
-		----------
-		integracao : float
-			Valor entre 0 e 1 representando o nível de integração municipal.
+		Args:
+			integracao (str): Descrição da integração do transporte municipal.
 
-		Returns
-		-------
-		int
-			Pontuação atribuída:
-			- 3: integracao >= 1
-			- 2: 0.95 <= integracao < 1
-			- 1: 0.85 <= integracao < 0.95
-			- 0: integracao < 0.85
+		Returns:
+			int: Pontuação baseada na integração do sistema de transporte.
 		"""
 		match integracao.strip():
 			case (
@@ -145,19 +114,11 @@ class ClassificarIndicadores:
 		"""
 		Calcula a pontuação para o indicador de frequência de atendimento.
 
-		Parameters
-		----------
-		frequencia : float
-			Tempo em minutos entre atendimentos.
+		Args:
+			frequencia (float): Tempo em minutos entre atendimentos.
 
-		Returns
-		-------
-		int
-			Pontuação atribuída:
-			- 3: frequencia <= 10
-			- 2: 10 < frequencia <= 15
-			- 1: 15 < frequencia <= 30
-			- 0: frequencia > 30
+		Returns:
+			int: Pontuação atribuída conforme a frequência do serviço.
 		"""
 		if frequencia <= 10:
 			return 3
@@ -168,50 +129,15 @@ class ClassificarIndicadores:
 		else:
 			return 0
 
-	def cumprimento_itinerarios_pontuacao(self, etinerario: float) -> int:
-		"""
-		Calcula a pontuação para o indicador de cumprimento de itinerários.
-
-		Parameters
-		----------
-		etinerario : float
-			Valor entre 0 e 1 representando a taxa de cumprimento dos itinerários.
-
-		Returns
-		-------
-		int
-			Pontuação atribuída:
-			- 3: etinerario >= 1
-			- 2: 0.8 <= etinerario <= 0.9
-			- 1: 0.5 <= etinerario <= 0.7
-			- 0: etinerario < 0.5
-		"""
-		if 1 <= etinerario:
-			return 3
-		elif 0.8 <= etinerario <= 0.9:
-			return 2
-		elif 0.5 <= etinerario <= 0.7:
-			return 1
-		else:
-			return 0
-
 	def treinamento_capacitacao_pontuacao(self, treinamento: float) -> int:
 		"""
 		Calcula a pontuação para o indicador de treinamento e capacitação.
 
-		Parameters
-		----------
-		treinamento : float
-			Valor entre 0 e 1 representando o nível de treinamento dos motoristas.
+		Args:
+			treinamento (float): Valor entre 0 e 1 representando o nível de treinamento dos motoristas.
 
-		Returns
-		-------
-		int
-			Pontuação atribuída:
-			- 3: treinamento >= 1
-			- 2: 0.95 <= treinamento <= 0.98
-			- 1: 0.90 <= treinamento <= 0.95
-			- 0: treinamento < 0.90
+		Return:
+			int: Pontuação atribuída:
 		"""
 		if 1 <= treinamento:
 			return 3
@@ -222,7 +148,34 @@ class ClassificarIndicadores:
 		else:
 			return 0
 
+	def classificacao_iqt_pontuacao(self, iqt: float) -> str:
+		"""
+		Classifica o Índice de Qualidade do Transporte (IQT) em categorias qualitativas.
+
+		Args:
+			iqt (float): Valor do IQT.
+
+		Returns:
+			str: Classificação qualitativa do IQT.
+		"""
+		if iqt >= 3.0:
+			return "Excelente"
+		elif 2 <= iqt < 3.0:
+			return "Bom"
+		elif 1.0 <= iqt < 2:
+			return "Suficiente"
+		else:
+			return "Insuficiente"
+
 	def informacao_internet_pontuacao(self, informacao: str) -> int:
+		"""Retorna a pontuação com base na atualização das informações online.
+
+		Args:
+			informacao (str): Descrição do estado das informações no site/aplicativo.
+
+		Returns:
+			int: Pontuação correspondente à atualização das informações.
+		"""
 		match informacao:
 			case "Possuir informações em site e aplicativo atualizados":
 				return 3
@@ -234,8 +187,16 @@ class ClassificarIndicadores:
 				return 0
 
 	def valor_tarifa_pontuacao(self, informacao_tarifa: str) -> int:
+		"""Retorna a pontuação com base na política de aumento da tarifa.
+
+		Args:
+			informacao_tarifa (str): Descrição do aumento da tarifa.
+
+		Returns:
+			int: Pontuação correspondente ao impacto do aumento tarifário.
+		"""
 		match informacao_tarifa:
-			case "Não houve aumento da tarifa ":
+			case "Não houve aumento da tarifa":
 				return 3
 			case "Aumento inferior ao índice":
 				return 2
@@ -244,37 +205,18 @@ class ClassificarIndicadores:
 			case _:
 				return 0
 
-	def classificacao_iqt_pontuacao(self, iqt: float) -> str:
-		"""
-		Classifica o IQT em categorias qualitativas.
-
-		Parameters
-		----------
-		iqt : float
-			Valor do Índice de Qualidade do Transporte (IQT).
-
-		Returns
-		-------
-		str
-			Classificação do IQT:
-			- 'Excelente': iqt >= 3.0
-			- 'Bom': 2.0 <= iqt < 3.0
-			- 'Suficiente': 1.0 <= iqt < 2.0
-			- 'Insuficiente': iqt < 1.0
-		"""
-		if iqt >= 3.0:
-			return "Excelente"
-		elif 2 <= iqt < 3.0:
-			return "Bom"
-		elif 1.0 <= iqt < 2:
-			return "Suficiente"
-		else:
-			return "Insuficiente"
-
 	def classificar_linhas(self, dados_linhas: pd.DataFrame) -> pd.DataFrame:
+		"""
+		Classifica as linhas de transporte público com base nos indicadores avaliados.
+
+		Args:
+			dados_linhas (pd.DataFrame): DataFrame contendo os dados das linhas e seus indicadores.
+
+		Returns:
+			pd.DataFrame: DataFrame contendo as classificações de cada linha.
+		"""
 		classificacao = {"linha": [], "I1": [], "I2": [], "I3": [], "I4": [], "I5": [], "I6": [], "I7": [], "I8": [], "I9": [], "I10": []}
 
-		# Itera pelas linhas do DataFrame e calcula as pontuações
 		for _, linha in dados_linhas.iterrows():
 			classificacao["linha"].append(linha["linha"])
 			classificacao["I1"].append(self.porcentagem_vias_pavimentadas_pontuacao(linha["via_pavimentada"]))
@@ -282,11 +224,10 @@ class ClassificarIndicadores:
 			classificacao["I3"].append(self.integracao_municipal_pontuacao(linha["integracao"]))
 			classificacao["I4"].append(self.pontualidade_pontuacao(linha["pontualidade"]))
 			classificacao["I5"].append(self.frequencia_atendimento_pontuacao(linha["frequencia_atendimento_pontuacao"]))
-			classificacao["I6"].append(self.cumprimento_itinerarios_pontuacao(linha["cumprimento_itinerario"]))
+			classificacao["I6"].append(self.classificacao_iqt_pontuacao(linha["iqt"]))
 			classificacao["I7"].append(self.abrangencia_rede_pontuacao(linha["proporcao"]))
 			classificacao["I8"].append(self.treinamento_capacitacao_pontuacao(linha["treinamento_motorista"]))
 			classificacao["I9"].append(self.informacao_internet_pontuacao(linha["informacao_internet"]))
 			classificacao["I10"].append(self.valor_tarifa_pontuacao(linha["valor_tarifa"]))
 
-		# Converte o dicionário em DataFrame
 		return pd.DataFrame(classificacao)

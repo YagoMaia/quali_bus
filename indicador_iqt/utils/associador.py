@@ -84,8 +84,7 @@ class Associador:
 		return np.sqrt(np.sum(np.square(coord1 - coord2), axis=axis))
 
 	def _linestring_to_array(self, linestring: LineString):
-		"""
-		Converte uma Linestring em um array numpy com formato [[[x1,y1]], [[x2,y2]], ...]
+		"""Converte uma Linestring em um array numpy com formato [[[x1,y1]], [[x2,y2]], ...].
 
 		Parâmetros:
 		linestring (LineString): Objeto Linestring do Shapely

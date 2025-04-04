@@ -1,33 +1,20 @@
 import pandas as pd
 
 
-def carregar_data(file_path: str) -> pd.DataFrame:
-	"""
-	Carrega e processa um arquivo CSV contendo dados de horários e datas, realizando as conversões
-	necessárias para os tipos datetime.
+def carregar_dados(file_path: str) -> pd.DataFrame:
+	"""Carrega e processa um arquivo CSV contendo dados de horários e datas, realizando as conversões necessárias para os tipos datetime.
 
-	Parameters
-	----------
-	file_path : str
-		Caminho completo para o arquivo CSV a ser carregado.
+	Args:
+		file_path (str): Caminho completo para o arquivo CSV a ser carregado.
 
-	Returns
-	-------
-	pd.DataFrame
-		DataFrame processado contendo as seguintes colunas:
-		- hsstart: datetime - Horário de início
-		- hsstop: datetime - Horário de término
-		- duracao: timedelta - Duração calculada (hsstop - hsstart)
-		- data: datetime - Data inicial
-		- dataf: datetime - Data final
-		- duracao_minutos: int - Duração em minutos
-
-	Notes
-	-----
-	O arquivo CSV deve conter as colunas: 'hsstart', 'hsstop', 'data', 'dataf'
-	com os seguintes formatos:
-	- hsstart, hsstop: "%H:%M:%S"
-	- data, dataf: "%d/%m/%Y"
+	Returns:
+		pd.DataFrame: DataFrame processado contendo as seguintes colunas:
+			- hsstart: datetime - Horário de início
+			- hsstop: datetime - Horário de término
+			- duracao: timedelta - Duração calculada (hsstop - hsstart)
+			- data: datetime - Data inicial
+			- dataf: datetime - Data final
+			- duracao_minutos: int - Duração em minutos
 	"""
 	df = pd.read_csv(file_path, delimiter=",")
 
@@ -43,24 +30,14 @@ def carregar_data(file_path: str) -> pd.DataFrame:
 	return df
 
 
-def carregar_integrations(file_path: str) -> pd.Series:
-	"""
-	Carrega um arquivo CSV de integrações e retorna uma série contendo as linhas de origem únicas.
+def carregar_integracoes(file_path: str) -> pd.Series:
+	"""Carrega um arquivo CSV de integrações e retorna uma série contendo as linhas de origem únicas.
 
-	Parameters
-	----------
-	file_path : str
-		Caminho completo para o arquivo CSV de integrações.
+	Args:
+		file_path (str): Caminho completo para o arquivo CSV de integrações.
 
-	Returns
-	-------
-	pd.Series
-		Série contendo valores únicos da coluna 'LINHA ORIGEM'.
-
-	Notes
-	-----
-	O arquivo CSV deve conter uma coluna chamada 'LINHA ORIGEM'.
-	A função remove duplicatas antes de retornar os valores.
+	Returns:
+		pd.Series: Série contendo valores únicos da coluna 'LINHA ORIGEM'.
 	"""
 	df_integrations = pd.read_csv(file_path, delimiter=",")
 	df_integrations = df_integrations.drop_duplicates(subset=["LINHA ORIGEM"])
@@ -68,7 +45,19 @@ def carregar_integrations(file_path: str) -> pd.Series:
 	return df_integrations
 
 
-def carregar_planned_trips(file_path: str) -> pd.DataFrame:
+def carregar_viagens_planejadas(file_path: str) -> pd.DataFrame:
+	"""Carrega e processa um arquivo CSV contendo dados de viagens planejadas do sistema de transporte.
+
+	Args:
+		file_path (str): Caminho completo para o arquivo CSV contendo os dados de rastreamento de viagens.
+
+	Returns:
+		pd.DataFrame: DataFrame agrupado com informações sobre o cumprimento de horários contendo:
+			- Índice multinível com linha e sentido (ida/volta)
+			- sem_horario: Quantidade de viagens sem informação de horário
+			- com_horario: Quantidade de viagens com informação de horário
+			- proporcao_sem_horario: Proporção de viagens com horário registrado em relação ao total
+	"""
 	df_rastreamento = pd.read_csv(file_path, delimiter=",")
 	colunas_desnecessarias = [
 		"'Veiculo Planejado'",

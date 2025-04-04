@@ -18,13 +18,6 @@ class CalcularIndicadores:
 	Esta classe contém métodos para calcular o Índice de Qualidade do Transporte (IQT)
 	e avaliar diferentes aspectos do serviço de transporte público, como pontualidade,
 	infraestrutura e atendimento.
-
-	----------
-	indicadores_prioridades : dict
-		Dicionário contendo as informações dos indicadores com as seguintes chaves:
-		- 'nomeclatura': Lista de códigos dos indicadores (I1, I2, etc.)
-		- 'prioridade': Lista de pesos para cada indicador
-		- 'indicador': Lista com descrições dos indicadores
 	"""
 
 	def __init__(self):
@@ -49,18 +42,38 @@ class CalcularIndicadores:
 		}
 
 	def carregar_dados(self, df_linhas: pd.DataFrame, df_frequencia: pd.DataFrame, df_pontualidade: pd.DataFrame, df_cumprimento: pd.DataFrame):
+		"""Carrega todos os dados necessários para o cálculo dos indicadores.
+
+		Args:
+			df_linhas (pd.DataFrame): DataFrame contendo os dados das linhas de transporte.
+			df_frequencia (pd.DataFrame): DataFrame contendo os dados de frequência de atendimento.
+			df_pontualidade (pd.DataFrame): DataFrame contendo os dados de pontualidade.
+			df_cumprimento (pd.DataFrame): DataFrame contendo os dados de cumprimento de itinerário.
+		"""
 		self.dados_linhas = self.carregar_dados_linha(df_linhas)
 		self.frequencia = self.carregar_frequencia_atendimento_pontuacao(df_frequencia)
 		self.pontualidade = self.carregar_pontualidade(df_pontualidade)
 		self.cumprimento = self.carregar_cumprimento(df_cumprimento)
 
 	def carregar_dados_geometrias(self, df_pontos_onibus: pd.DataFrame, df_residencias: pd.DataFrame):
+		"""Carrega os dados geométricos de pontos de ônibus e residências.
+
+		Args:
+			df_pontos_onibus (pd.DataFrame): DataFrame contendo os dados dos pontos de ônibus.
+			df_residencias (pd.DataFrame): DataFrame contendo os dados das residências.
+		"""
 		self.associador = Associador(df_pontos_onibus, self.dados_linhas.copy(), df_residencias)
 		self.dados_geograficos = self.associador.consolidar_associacoes()
 
 	def carregar_dados_linha(self, df_line: pd.DataFrame) -> gpd.GeoDataFrame:
 		"""
 		Carrega os dados de frequência de atendimento a partir de um DataFrame.
+
+		Args:
+			df_line (pd.DataFrame): DataFrame contendo os dados de frequência de atendimento.
+
+		Returns:
+			gpd.GeoDataFrame: GeoDataFrame com a coluna geometry convertida para LineString 2D.
 		"""
 		try:
 			if not modelos.validar_df_dados_linhas(df_line):
@@ -105,28 +118,22 @@ class CalcularIndicadores:
 		Raises:
 			ValueError: Se a coluna especificada não existir no DataFrame.
 		"""
-		# Validar entrada
 		if coluna not in df.columns:
 			raise ValueError(f"Coluna '{coluna}' não encontrada no DataFrame")
 
-		# Criar cópia do DataFrame para não modificar o original
 		df_copy = df.copy()
 
 		def converter_para_2d(geom):
 			if geom is None:
 				return None
 
-			# Converte string WKT para objeto geometry se necessário
 			if isinstance(geom, str):
 				geom = loads(geom)
 
-			# Extrai apenas coordenadas X e Y
 			coords_2d = [(x, y) for x, y, *_ in geom.coords]
 
-			# Cria novo LineString com apenas 2 dimensões
 			return LineString(coords_2d)
 
-		# Aplica a conversão na coluna especificada
 		df_copy[coluna] = df_copy[coluna].apply(converter_para_2d)  # type: ignore
 
 		gdf = gpd.GeoDataFrame(data=df_copy, geometry=coluna, crs=crs)  # type: ignore
@@ -145,41 +152,30 @@ class CalcularIndicadores:
 			gpd.GeoDataFrame: DataFrame com a coluna geometry contendo os pontos da LineString.
 		"""
 		try:
-			# Verificar se a coluna existe no DataFrame
 			if coluna not in df.columns:
 				raise ValueError(f"Coluna '{coluna}' não encontrada no DataFrame.")
 
-			# Lista para armazenar as linhas do novo DataFrame
 			novo_df_linhas = []
 
-			# Iterar sobre cada linha do DataFrame original
 			for idx, row in df.iterrows():
 				linha_geometry = row[coluna]
 
-				# Validar se a geometria é do tipo LineString
 				if not isinstance(linha_geometry, LineString):
 					print(f"Aviso: A geometria na linha {idx} não é um LineString. Pulando...")
 					continue
 
-				# Extrair coordenadas da LineString
 				coords = list(linha_geometry.coords)
 
-				# Criar um ponto para cada coordenada da LineString
 				for coord_idx, coord in enumerate(coords):
-					nova_linha = dict()
-					# Criar um dicionário com todos os dados da linha original
+					nova_linha = {}
 					nova_linha["linha"] = row.to_dict()["linha"]
 
-					# Criar um objeto Point com as coordenadas X e Y
 					nova_linha["geometry"] = Point(coord[0], coord[1])
 
-					# Adicionar informações adicionais úteis
 					nova_linha["ponto_ordem"] = coord_idx
 
-					# Adicionar a nova linha à lista
 					novo_df_linhas.append(nova_linha)
 
-			# Criar um novo GeoDataFrame com os pontos
 			gdf_pontos = gpd.GeoDataFrame(novo_df_linhas, crs=32723)  # type: ignore
 
 			return gdf_pontos
@@ -225,6 +221,14 @@ class CalcularIndicadores:
 			return pd.DataFrame()
 
 	def cumprimento_itinerario(self, df_cumprimento: pd.DataFrame):
+		"""_summary_.
+
+		Args:
+			df_cumprimento (pd.DataFrame): _description_
+
+		Returns:
+			_type_: _description_
+		"""
 		df_temp = df_cumprimento.copy()
 
 		df_temp[["linha", "sentido"]] = df_temp["Trajeto"].str.extract(r"(\d+)\s*-\s*.*\((ida|volta)\)")
@@ -267,17 +271,10 @@ class CalcularIndicadores:
 		"""Calcula o tempo médio de operação por rota (linha).
 
 		Args:
-			df (pd.DataFrame): DataFrame contendo a coluna 'linha' para identificar a rota e 'duracao' para a duração das viagens.
+			df_frequencia (pd.DataFrame): DataFrame contendo a coluna 'linha' para identificar a rota e colunas de tempo.
 
 		Returns:
 			pd.DataFrame: DataFrame com o tempo médio de operação por rota.
-
-		Example:
-			>>> tempo_medio_operacao(df)
-			linha sentido duracao
-			101    IDA    45.0
-			102    VOLTA  37.5
-			103    IDA    50.2
 		"""
 		df_temp = df_frequencia.copy()
 
@@ -298,6 +295,7 @@ class CalcularIndicadores:
 		return df_temp
 
 	def merge_dados(self):
+		"""Combina todos os dados carregados em um único DataFrame."""
 		try:
 			if not isinstance(self.dados_linhas, gpd.GeoDataFrame):
 				raise
@@ -334,30 +332,19 @@ class CalcularIndicadores:
 			print(f"Erro ao mesclar os dados: {e}")
 
 	def classificar_linha(self):
+		"""Classifica as linhas de acordo com os indicadores calculados."""
 		classificador = ClassificarIndicadores()
 		self.merge_dados()
 		self.classificao_linhas = classificador.classificar_linhas(self.dados_completos)
 
 	def calcular_iqt(self, linha: list) -> float:
-		"""
-		Calcula o Índice de Qualidade do Transporte (IQT) para uma linha específica.
+		"""Calcula o Índice de Qualidade do Transporte (IQT) para uma linha específica.
 
-		Parameters
-		----------
-		linha : list
-			Lista contendo os valores dos indicadores para uma linha específica.
-			O primeiro elemento é ignorado, e os demais devem corresponder aos
-			indicadores na ordem definida em indicadores_prioridades.
+		Args:
+			linha (list): Lista contendo os valores dos indicadores para uma linha específica. O primeiro elemento é ignorado, e os demais devem corresponder aos indicadores na ordem definida em indicadores_prioridades.
 
-		Returns
-		-------
-		float
-			Valor do IQT calculado.
-
-		Notes
-		-----
-		O cálculo é feito através da soma ponderada dos indicadores dividida pelo
-		produto do desvio padrão das prioridades e quantidade de indicadores.
+		Returns:
+			float: Valor do IQT calculado.
 		"""
 		try:
 			# Multiplicando indicadores pelo peso de cada um
@@ -377,8 +364,9 @@ class CalcularIndicadores:
 			return 0.0
 
 	def processar_iqt(self):
+		"""Processa o cálculo do IQT para todas as linhas classificadas."""
 		valores_iqt, cores = [], []
-		for index, row in self.classificao_linhas.iterrows():
+		for _, row in self.classificao_linhas.iterrows():
 			# Excluir as colunas 'linha' e 'sentido' e converter para lista
 			valores_indicadores = row.iloc[1:].tolist()  # Pegando valores de 'I1', 'I3', 'I4', etc.
 
