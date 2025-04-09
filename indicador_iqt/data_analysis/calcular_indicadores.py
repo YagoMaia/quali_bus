@@ -234,8 +234,6 @@ class CalcularIndicadores:
 		"""
 		df_temp = df_cumprimento.copy()
 
-		# df_temp[["id_linha", "sentido"]] = df_temp["descricao_trajeto"].str.extract(r"(\d+)\s*-\s*.*\((ida|volta)\)")
-		# df_temp.replace("-", pd.NA, inplace=True)
 		df_temp.dropna(subset=["km_executado"], inplace=True)
 		df_temp["km_executado"] = pd.to_numeric(df_temp["km_executado"], errors="coerce")
 		df_temp = df_temp.groupby(["id_linha"])["km_executado"].mean().reset_index()
@@ -250,7 +248,6 @@ class CalcularIndicadores:
 		"""
 		try:
 			df_temp = df_pontualidade.copy()
-			# df_temp[["id_linha", "sentido"]] = df_temp["descricao_trajeto"].str.extract(r"(\d+)\s*-\s*.*\((ida|volta)\)")
 			df_temp["sentido"] = df_temp["sentido"].replace({"ida": "IDA", "volta": "VOLTA"})
 			df_temp = df_temp.drop("descricao_trajeto", axis=1)
 			df_temp.replace("-", pd.NA, inplace=True)
@@ -260,16 +257,12 @@ class CalcularIndicadores:
 				df_temp[True] = 0
 			if False not in df_temp.columns:
 				df_temp[False] = 0
-			# # Renomeia as colunas para maior clareza
 			df_temp.columns = ["sem_horario", "com_horario"]
-			# # Calcula a proporção de viagens sem horário sobre o total de viagens para cada grupo
 			df_temp["pontualidade"] = df_temp["com_horario"] / (df_temp["sem_horario"] + df_temp["com_horario"])
 			df_temp = df_temp.drop(["sem_horario", "com_horario"], axis=1)
 
-			# Primeiro reset_index para transformar id_linha em coluna
 			df_temp = df_temp.reset_index()
 
-			# Agora podemos aplicar astype nas colunas
 			df_temp = df_temp.astype({"id_linha": "string", "pontualidade": "float64"})
 
 			return df_temp
@@ -291,14 +284,10 @@ class CalcularIndicadores:
 		df_temp["horario_inicio_jornada"] = pd.to_datetime(df_temp["horario_inicio_jornada"], format="%H:%M:%S")
 		df_temp["horario_fim_jornada"] = pd.to_datetime(df_temp["horario_fim_jornada"], format="%H:%M:%S")
 
-		# Calcular a duração como a diferença entre horario_fim_jornada e horario_inicio_jornada
 		df_temp["frequencia_atendimento_pontuacao"] = df_temp["horario_fim_jornada"] - df_temp["horario_inicio_jornada"]
 		df_temp["frequencia_atendimento_pontuacao"] = df_temp["frequencia_atendimento_pontuacao"].apply(lambda x: int(x.total_seconds() / 60))
 
 		df_temp["data_jornada"] = pd.to_datetime(df_temp["data_jornada"], format="%d/%m/%Y")
-		# df_temp["dataf"] = pd.to_datetime(df_temp["dataf"], format="%d/%m/%Y")
-
-		# df_temp['sentido'] = df_temp['sentido'].replace({0: 'IDA', 1: 'VOLTA'})
 
 		df_temp = df_temp.groupby(["id_linha"])["frequencia_atendimento_pontuacao"].mean().reset_index()
 
@@ -370,13 +359,33 @@ class CalcularIndicadores:
 		"""Processa o cálculo do IQT para todas as linhas classificadas."""
 		valores_iqt, cores = [], []
 		for _, row in self.classificao_linhas.iterrows():
-			# Excluir as colunas 'id_linha' e 'sentido' e converter para lista
-			valores_indicadores = row.iloc[1:].tolist()  # Pegando valores de 'I1', 'I3', 'I4', etc.
+			valores_indicadores = row.iloc[1:].tolist()
 
-			# Chamar a função de cálculo do IQT passando os valores da linha
 			iqt = self.calcular_iqt(valores_indicadores)
 			cor = cor_iqt(iqt)
 			valores_iqt.append(iqt)
 			cores.append(cor)
 		self.dados_completos["iqt"] = valores_iqt
 		self.dados_completos["cor"] = cores
+		self._gerar_matriz()
+
+	def _gerar_matriz(self):
+		df_matriz = self.dados_completos.drop(columns=["geometria_linha"])
+
+		mapeamento = {
+			"indicador_via_pavimentada": "I1",
+			"distancia": "I2",
+			"tipo_integracao": "I3",
+			"pontualidade": "I4",
+			"frequencia_atendimento_pontuacao": "I5",
+			"cumprimento_itinerario": "I6",
+			"proporcao": "I7",
+			"indicador_treinamento_motorista": "I8",
+			"disponibilidade_informacao": "I9",
+			"valor_tarifa": "I10",
+		}
+
+		df_matriz = df_matriz.rename(columns=mapeamento)
+
+		colunas_para_manter = ["id_linha"] + list(mapeamento.values())
+		self.matriz = df_matriz[colunas_para_manter]
