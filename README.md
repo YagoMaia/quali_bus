@@ -4,20 +4,12 @@ Esta biblioteca tem como objetivo automatizar o cálculo do **Índice de Qualida
 
 ---
 
-## 📦 **Instalação**
-
-Antes de utilizar a biblioteca, certifique-se de instalar as dependências necessárias:
-
-```bash
-pip install -r requirements.txt
-```
-
 ## 🚀 Como Usar
 
 🔹 1. Importação da Biblioteca
 
 ```python
-from indicador_iqt import CalcularIndicadores
+from indicador_iqt import CalcularIndicadores, MapaIQT
 ```
 
 🔹 2. Inicializando a Classe
@@ -26,7 +18,7 @@ from indicador_iqt import CalcularIndicadores
 calc = CalcularIndicadores()
 ```
 
-🔹 3. Carregando os Dados
+🔹 3. Carregando os Dados das Linhas de Ônibus
 
 Os dados podem ser carregados a partir de um `pandas.DataFrame` ou `geopandas.GeoDataFrame`:
 
@@ -38,47 +30,109 @@ from shapely.geometry import LineString
 # Exemplo de dados fictícios de linhas de ônibus
 linhas_df = gpd.GeoDataFrame({
     'id_linha': ['101', '102'],
-    'geometry': [LineString([(0, 0), (1, 1), (2, 2)]), LineString([(3, 3), (4, 4), (5, 5)])]
+    'geometria_linha': [LineString([(0, 0), (1, 1), (2, 2)]), LineString([(3, 3), (4, 4), (5, 5)])]
+})
+
+frequencia_df = pd.DataFrame({
+    'id_linha': ['101', '102'],
+    'horario_inicio_jornada': ['06:07:57', '06:07:57'],
+    'horario_fim_jornada': ['06:57:51', '06:57:57'],
+    'data_jornada': ['01/01/2024', '01/01/2024'],
+    'sentido_viagem': ['0', '1'],
+    'quantidade_passageiros': ['3', '8'],
+})
+
+pontualidade_df = pd.DataFrame({
+    'id_linha': ['101', '102'],
+    'data_viagem': ['01/01/2024', '01/01/2024'],
+    'sentido_viagem': ['0', '1'],
+    'partida_planejada': ['06:07:00', '06:07:00'],
+    'partida_real': ['06:07:57', '06:07:57'],
+    'chegada_planejada': ['06:57:00', '06:57:00'],
+    'chegada_real': ['06:57:57', '06:57:57'],
+    'km_executado': ['31', '16'],
 })
 
 # Carregar os dados na classe
-calc.load_dados_linha(linhas_df)
+calc.carregar_dados(linhas_df, frequencia_df, pontualidade_df)
 ```
 
-🔹 4. Cálculo de Indicadores
+🔹 4. Carregando os Dados dos Pontos (Pontos de Ônibus e Residências)
+
+Os dados podem ser carregados a partir de um `pandas.DataFrame` ou `geopandas.GeoDataFrame`:
+
+```python
+import pandas as pd
+import geopandas as gpd
+from shapely.geometry import LineString
+
+residencias = pd.DataFrame({
+    "id": [1, 2, 3]
+    "latitude" : [-41.5, -42.521321, -41.21477]
+    "longitude" : [-41.5, -42.521321, -41.21477]
+})
+
+pontos_de_onibus = pd.DataFrame({
+    "id": [1, 2, 3]
+    "latitude" : [-41.5, -42.521321, -41.21477]
+    "longitude" : [-41.5, -42.521321, -41.21477]
+})
+
+# Carregar os dados na classe
+calc.carregar_dados_geometrias(pontos_de_onibus, residencias)
+```
+
+🔹 5. Cálculo de Indicadores
 
 A biblioteca suporta o cálculo de diversos indicadores de qualidade do transporte, como:
 
 ```python
-# Cálculo do tempo médio de operação
-tempo_medio = calc.frequencia_atendimento_pontuacao(df_frequencia)
-print(tempo_medio)
+# Essa função classifica cada dado da linha segundo a classificação do IQT
+calc.classificar_linha()
 
-# Cálculo da pontualidade
-pontualidade = calc.calcular_pontualidade(df_pontualidade)
-print(pontualidade)
-
-# Cálculo do cumprimento de itinerário
-cumprimento = calc.cumprimento_itinerario(df_cumprimento)
-print(cumprimento)
+# Essa função diz o valor IQT para cada linha
+calc.processar_iqt()
 ```
 
-🔹 5. Cálculo do Índice IQT
+🔹 6. Criação do Mapa
 
 ```python
-linha_indicadores = [0.8, 0.7, 0.6, 0.9, 0.85, 0.75, 0.65, 0.7, 0.5, 0.6]
-iqt = calc.calcular_iqt(linha_indicadores)
-print(f"Índice IQT: {iqt}")
+
+import geopandas as gpd
+
+gdf_cidade = gdp.read_file(path_shapefile_cidade)
+
+# Criando o objeto do mapa
+mapa = iqt.MapaIQT(gdf_cidade)
+
+# Adicionar no mapa as linhas de ônibus já com a classificação IQT
+
+mapa.classificar_rota_grupo(calc.dados_completos)
 ```
 
-| Método                                 | Descrição                                                   |
-| -------------------------------------- | ----------------------------------------------------------- |
-| `load_dados_linha(df)`                 | Carrega os dados das linhas e converte WKT para LineString. |
-| `frequencia_atendimento_pontuacao(df)` | Calcula o tempo médio de operação por rota.                 |
-| `calcular_pontualidade(df)`            | Calcula a pontuação para o indicador de pontualidade.       |
-| `cumprimento_itinerario(df)`           | Calcula o cumprimento de itinerário por quilometragem.      |
-| `calcular_iqt(lista_indicadores)`      | Calcula o Índice de Qualidade do Transporte (IQT).          |
-| `processar_iqt()`                      | Processa os cálculos do IQT e gera classificações.          |
+🔹 7. Valores Atribuidos na Classificação
+
+```python
+
+calc.classificao_linhas # DataFrame com os dados clissificados
+
+calc.matriz # DataFrame com os dados calculcados/existentes
+
+```
+
+## Classificação das Linha
+
+| id_linha | I1  | I2  | I3  | I4  | I5  | I6  | I7  | I8  | I9  | I10 |
+| -------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 101      | 3   | 2   | 1   | 0   | 0   | 3   | 2   | 3   | 0   | 1   |
+| 102      | 3   | 2   | 1   | 0   | 0   | 3   | 2   | 3   | 0   | 1   |
+
+## Dados Calculados
+
+| id_linha | I1  | I2     | I3                                                                                                 | I4  | I5   | I6   | I7   | I8  | I9                                                   | I10                           |
+| -------- | --- | ------ | -------------------------------------------------------------------------------------------------- | --- | ---- | ---- | ---- | --- | ---------------------------------------------------- | ----------------------------- |
+| 101      | 1   | 148.12 | Integração tarifária temporal ocorre em determinados pontos, apenas com transferências intramodais | 0   | 49.8 | 1.45 | 0.98 | 1   | Possuir informações em site e aplicativo atualizados | Aumento equivalente ao índice |
+| 102      | 2   | 111.12 | Integração tarifária temporal ocorre em determinados pontos, apenas com transferências intramodais | 0   | 21.8 | 1.75 | 0.78 | 1   | Possuir informações em site e aplicativo atualizados | Aumento equivalente ao índice |
 
 ## 🤝 Contribuindo
 
