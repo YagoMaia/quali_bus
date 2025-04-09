@@ -41,7 +41,7 @@ class CalcularIndicadores:
 			],
 		}
 
-	def carregar_dados(self, df_linhas: pd.DataFrame, df_frequencia: pd.DataFrame, df_pontualidade: pd.DataFrame, df_cumprimento: pd.DataFrame):
+	def carregar_dados(self, df_linhas: pd.DataFrame, df_frequencia: pd.DataFrame, df_pontualidade: pd.DataFrame):
 		"""Carrega todos os dados necessários para o cálculo dos indicadores.
 
 		Args:
@@ -53,7 +53,7 @@ class CalcularIndicadores:
 		self.dados_linhas = self.carregar_dados_linha(df_linhas)
 		self.frequencia = self.carregar_frequencia_atendimento_pontuacao(df_frequencia)
 		self.pontualidade = self.carregar_pontualidade(df_pontualidade)
-		self.cumprimento = self.carregar_cumprimento(df_cumprimento)
+		self.cumprimento = self.carregar_cumprimento(df_pontualidade)
 
 	def carregar_dados_geometrias(self, df_pontos_onibus: pd.DataFrame, df_residencias: pd.DataFrame):
 		"""Carrega os dados geométricos de pontos de ônibus e residências.
@@ -90,30 +90,32 @@ class CalcularIndicadores:
 			print("Erro ao carregar dados de linha: ", error)
 			return gpd.GeoDataFrame()
 
-	def _validar_geometry_wkt(self, df, coluna="geometry"):
+	def _validar_geometry_wkt(self, df, coluna="geometria_linha"):
 		"""
-		Valida se os valores da coluna geometry são strings WKT.
+		Valida se os valores da coluna geometria_linha são strings WKT.
 
 		Args:
-			df (pd.DataFrame): DataFrame contendo a coluna geometry.
-			coluna (str): Nome da coluna geometry.
+			df (pd.DataFrame): DataFrame contendo a coluna geometria_linha.
+			coluna (str): Nome da coluna geometria_linha.
 
 		Returns:
 			bool: True se todos os valores forem strings WKT, False caso contrário.
 		"""
 		return df[coluna].apply(lambda x: isinstance(x, str) and x.startswith("LINESTRING"))
 
-	def _converter_geometry_para_linestring(self, df: pd.DataFrame, coluna: str = "geometry", crs: Optional[str] = "EPSG:4326") -> gpd.GeoDataFrame:
+	def _converter_geometry_para_linestring(
+		self, df: pd.DataFrame, coluna: str = "geometria_linha", crs: Optional[str] = "EPSG:4326"
+	) -> gpd.GeoDataFrame:
 		"""
 		Converte strings WKT em objetos LineString 2D e retorna um GeoDataFrame.
 
 		Args:
-			df (pd.DataFrame): DataFrame contendo a coluna geometry.
+			df (pd.DataFrame): DataFrame contendo a coluna geometria_linha.
 			coluna (str): Nome da coluna que contém as geometrias.
 			crs (Optional[str]): Sistema de coordenadas do GeoDataFrame. Default é WGS84.
 
 		Returns:
-			gpd.GeoDataFrame: GeoDataFrame com a coluna geometry convertida para LineString 2D.
+			gpd.GeoDataFrame: GeoDataFrame com a coluna geometria_linha convertida para LineString 2D.
 
 		Raises:
 			ValueError: Se a coluna especificada não existir no DataFrame.
@@ -136,16 +138,17 @@ class CalcularIndicadores:
 
 		df_copy[coluna] = df_copy[coluna].apply(converter_para_2d)  # type: ignore
 
-		gdf = gpd.GeoDataFrame(data=df_copy, geometry=coluna, crs=crs)  # type: ignore
+		df_copy = df_copy.astype({"id_linha": "string"})
 
+		gdf = gpd.GeoDataFrame(data=df_copy, geometry=coluna, crs=crs)  # type: ignore
 		return gdf
 
-	def _cria_geometry_pontos_rota(self, df: gpd.GeoDataFrame, coluna: str = "geometry") -> gpd.GeoDataFrame:
+	def _cria_geometry_pontos_rota(self, df: gpd.GeoDataFrame, coluna: str = "geometria_linha") -> gpd.GeoDataFrame:
 		"""
 		Cria um geometry com os pontos da LineString e adiciona-os ao DataFrame.
 
 		Args:
-			df (gpd.GeoDataFrame): GeoDataFrame contendo a coluna 'geometry' que é um LineString.
+			df (gpd.GeoDataFrame): GeoDataFrame contendo a coluna 'geometria_linha' que é um LineString.
 			coluna (str): Nome da coluna que contém o LineString.
 
 		Returns:
@@ -168,7 +171,7 @@ class CalcularIndicadores:
 
 				for coord_idx, coord in enumerate(coords):
 					nova_linha = {}
-					nova_linha["linha"] = row.to_dict()["linha"]
+					nova_linha["id_linha"] = row.to_dict()["id_linha"]
 
 					nova_linha["geometry"] = Point(coord[0], coord[1])
 
@@ -231,11 +234,13 @@ class CalcularIndicadores:
 		"""
 		df_temp = df_cumprimento.copy()
 
-		df_temp[["linha", "sentido"]] = df_temp["Trajeto"].str.extract(r"(\d+)\s*-\s*.*\((ida|volta)\)")
-		df_temp.replace("-", pd.NA, inplace=True)
-		df_temp.dropna(subset=["KM Executado"], inplace=True)
-		df_temp["KM Executado"] = pd.to_numeric(df_temp["KM Executado"], errors="coerce")
-		df_temp = df_temp.groupby(["linha"])["KM Executado"].mean().reset_index()
+		# df_temp[["id_linha", "sentido"]] = df_temp["descricao_trajeto"].str.extract(r"(\d+)\s*-\s*.*\((ida|volta)\)")
+		# df_temp.replace("-", pd.NA, inplace=True)
+		df_temp.dropna(subset=["km_executado"], inplace=True)
+		df_temp["km_executado"] = pd.to_numeric(df_temp["km_executado"], errors="coerce")
+		df_temp = df_temp.groupby(["id_linha"])["km_executado"].mean().reset_index()
+
+		df_temp = df_temp.astype({"id_linha": "string", "km_executado": "float64"})
 
 		return df_temp
 
@@ -245,24 +250,29 @@ class CalcularIndicadores:
 		"""
 		try:
 			df_temp = df_pontualidade.copy()
-
-			df_temp[["linha", "sentido"]] = df_temp["Trajeto"].str.extract(r"(\d+)\s*-\s*.*\((ida|volta)\)")
+			# df_temp[["id_linha", "sentido"]] = df_temp["descricao_trajeto"].str.extract(r"(\d+)\s*-\s*.*\((ida|volta)\)")
 			df_temp["sentido"] = df_temp["sentido"].replace({"ida": "IDA", "volta": "VOLTA"})
-			df_temp = df_temp.drop("Trajeto", axis=1)
+			df_temp = df_temp.drop("descricao_trajeto", axis=1)
 			df_temp.replace("-", pd.NA, inplace=True)
-			df_temp["com_horario"] = df_temp[["Chegada ao ponto", "Partida Real", "Chegada Real"]].notna().any(axis=1)
-			df_temp = df_temp.groupby("linha")["com_horario"].value_counts(normalize=False).unstack(fill_value=0)
-
+			df_temp["com_horario"] = df_temp[["chegada_planejada", "chegada_real", "partida_planejada", "partida_real"]].notna().any(axis=1)
+			df_temp = df_temp.groupby("id_linha")["com_horario"].value_counts(normalize=False).unstack(fill_value=0)
+			if True not in df_temp.columns:
+				df_temp[True] = 0
+			if False not in df_temp.columns:
+				df_temp[False] = 0
 			# # Renomeia as colunas para maior clareza
 			df_temp.columns = ["sem_horario", "com_horario"]
-
 			# # Calcula a proporção de viagens sem horário sobre o total de viagens para cada grupo
 			df_temp["pontualidade"] = df_temp["com_horario"] / (df_temp["sem_horario"] + df_temp["com_horario"])
 			df_temp = df_temp.drop(["sem_horario", "com_horario"], axis=1)
 
-			df_temp_reset = df_temp.reset_index()
+			# Primeiro reset_index para transformar id_linha em coluna
+			df_temp = df_temp.reset_index()
 
-			return df_temp_reset[["linha", "pontualidade"]]
+			# Agora podemos aplicar astype nas colunas
+			df_temp = df_temp.astype({"id_linha": "string", "pontualidade": "float64"})
+
+			return df_temp
 		except Exception as error:
 			print("Erro ao calcular pontualidade: ", error)
 			return pd.DataFrame()
@@ -271,26 +281,28 @@ class CalcularIndicadores:
 		"""Calcula o tempo médio de operação por rota (linha).
 
 		Args:
-			df_frequencia (pd.DataFrame): DataFrame contendo a coluna 'linha' para identificar a rota e colunas de tempo.
+			df_frequencia (pd.DataFrame): DataFrame contendo a coluna 'id_linha' para identificar a rota e colunas de tempo.
 
 		Returns:
 			pd.DataFrame: DataFrame com o tempo médio de operação por rota.
 		"""
 		df_temp = df_frequencia.copy()
 
-		df_temp["hsstart"] = pd.to_datetime(df_temp["hsstart"], format="%H:%M:%S")
-		df_temp["hsstop"] = pd.to_datetime(df_temp["hsstop"], format="%H:%M:%S")
+		df_temp["horario_inicio_jornada"] = pd.to_datetime(df_temp["horario_inicio_jornada"], format="%H:%M:%S")
+		df_temp["horario_fim_jornada"] = pd.to_datetime(df_temp["horario_fim_jornada"], format="%H:%M:%S")
 
-		# Calcular a duração como a diferença entre hsstop e hsstart
-		df_temp["frequencia_atendimento_pontuacao"] = df_temp["hsstop"] - df_temp["hsstart"]
+		# Calcular a duração como a diferença entre horario_fim_jornada e horario_inicio_jornada
+		df_temp["frequencia_atendimento_pontuacao"] = df_temp["horario_fim_jornada"] - df_temp["horario_inicio_jornada"]
 		df_temp["frequencia_atendimento_pontuacao"] = df_temp["frequencia_atendimento_pontuacao"].apply(lambda x: int(x.total_seconds() / 60))
 
-		df_temp["data"] = pd.to_datetime(df_temp["data"], format="%d/%m/%Y")
-		df_temp["dataf"] = pd.to_datetime(df_temp["dataf"], format="%d/%m/%Y")
+		df_temp["data_jornada"] = pd.to_datetime(df_temp["data_jornada"], format="%d/%m/%Y")
+		# df_temp["dataf"] = pd.to_datetime(df_temp["dataf"], format="%d/%m/%Y")
 
 		# df_temp['sentido'] = df_temp['sentido'].replace({0: 'IDA', 1: 'VOLTA'})
 
-		df_temp = df_temp.groupby(["linha"])["frequencia_atendimento_pontuacao"].mean().reset_index()
+		df_temp = df_temp.groupby(["id_linha"])["frequencia_atendimento_pontuacao"].mean().reset_index()
+
+		df_temp = df_temp.astype({"id_linha": "string", "frequencia_atendimento_pontuacao": "float64"})
 
 		return df_temp
 
@@ -313,14 +325,14 @@ class CalcularIndicadores:
 			if not isinstance(self.dados_linhas, gpd.GeoDataFrame):
 				raise
 
-			self.cumprimento["cumprimento_itinerario"] = self.cumprimento["KM Executado"].astype(float) / self.dados_linhas["distancia_km"].astype(
+			self.cumprimento["cumprimento_itinerario"] = self.cumprimento["km_executado"].astype(float) / self.dados_linhas["distancia_km"].astype(
 				float
 			)  # type: ignore
 
-			self.dados_completos = pd.merge(self.dados_linhas, self.cumprimento, on=["linha"])
-			self.dados_completos = pd.merge(self.dados_completos, self.frequencia, on=["linha"])
-			self.dados_completos = pd.merge(self.dados_completos, self.pontualidade, on=["linha"])
-			self.dados_completos = pd.merge(self.dados_completos, self.dados_geograficos, on=["linha"])
+			self.dados_completos = pd.merge(self.dados_linhas, self.cumprimento, on=["id_linha"])
+			self.dados_completos = pd.merge(self.dados_completos, self.frequencia, on=["id_linha"])
+			self.dados_completos = pd.merge(self.dados_completos, self.pontualidade, on=["id_linha"])
+			self.dados_completos = pd.merge(self.dados_completos, self.dados_geograficos, on=["id_linha"])
 
 			self.dados_completos = gpd.GeoDataFrame(self.dados_completos)
 
@@ -358,7 +370,7 @@ class CalcularIndicadores:
 		"""Processa o cálculo do IQT para todas as linhas classificadas."""
 		valores_iqt, cores = [], []
 		for _, row in self.classificao_linhas.iterrows():
-			# Excluir as colunas 'linha' e 'sentido' e converter para lista
+			# Excluir as colunas 'id_linha' e 'sentido' e converter para lista
 			valores_indicadores = row.iloc[1:].tolist()  # Pegando valores de 'I1', 'I3', 'I4', etc.
 
 			# Chamar a função de cálculo do IQT passando os valores da linha

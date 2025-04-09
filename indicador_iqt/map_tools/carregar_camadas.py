@@ -15,7 +15,7 @@ def carregar_rotas(file_path: str) -> gpd.GeoDataFrame:
 	gdf_list = [gpd.read_file(file_path, driver="LIBKML", layer=layer) for layer in fiona.listlayers(file_path)]
 	gdf = gpd.GeoDataFrame(pd.concat(gdf_list, ignore_index=True))
 	gdf = gdf.query("Description != ''")
-	gdf[["linha", "sentido"]] = gdf["Name"].str.split(" - ", expand=True)
+	gdf[["id_linha", "sentido"]] = gdf["Name"].str.split(" - ", expand=True)
 	del gdf["Name"]
 	return gdf
 

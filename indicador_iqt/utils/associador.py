@@ -10,7 +10,7 @@ class Associador:
 	EARTH_CRS = "EPSG:4326"  # WGS 84
 	LOCAL_CRS = "EPSG:32723"  # UTM 23S para Minas Gerais
 	MAX_DISTANCE = 1000  # metros - distância máxima aceitável
-	REQUIRED_COLUMNS = {"Latitude", "Longitude"}
+	REQUIRED_COLUMNS = {"latitude", "longitude"}
 
 	def __init__(self, pontos_onibus: pd.DataFrame, linhas: gpd.GeoDataFrame, residencias: pd.DataFrame):
 		"""
@@ -31,8 +31,8 @@ class Associador:
 
 	def _verificar_formato_coordenadas(self, df: pd.DataFrame) -> bool:
 		"""Verifica se as coordenadas estão no formato decimal padrão."""
-		longitude_ok = (-180 <= df["Longitude"].max() <= 180) and (-180 <= df["Longitude"].min() <= 180)
-		latitude_ok = (-90 <= df["Latitude"].max() <= 90) and (-90 <= df["Latitude"].min() <= 90)
+		longitude_ok = (-180 <= df["longitude"].max() <= 180) and (-180 <= df["longitude"].min() <= 180)
+		latitude_ok = (-90 <= df["latitude"].max() <= 90) and (-90 <= df["latitude"].min() <= 90)
 		return longitude_ok and latitude_ok
 
 	def _extrair_coordenadas(self) -> tuple[Optional[np.ndarray], Optional[np.ndarray]]:
@@ -59,8 +59,8 @@ class Associador:
 		# Normalização de coordenadas se necessário
 		if not self._verificar_formato_coordenadas(residencias):
 			print("Normalizando coordenadas das residências...")
-			residencias["Longitude"] = residencias["Longitude"] / 1000000
-			residencias["Latitude"] = residencias["Latitude"] / 1000000
+			residencias["longitude"] = residencias["longitude"] / 1000000
+			residencias["latitude"] = residencias["latitude"] / 1000000
 		else:
 			print("Coordenadas das residências já estão no formato correto.")
 
@@ -68,9 +68,9 @@ class Associador:
 			raise ValueError("Coordenadas dos pontos de ônibus estão em formato incorreto!")
 
 		# Criar geometrias como GeoSeries
-		geometry_residencias = gpd.GeoSeries([Point(xy) for xy in zip(residencias["Longitude"], residencias["Latitude"])])
+		geometry_residencias = gpd.GeoSeries([Point(xy) for xy in zip(residencias["longitude"], residencias["latitude"])])
 
-		geometry_onibus = gpd.GeoSeries([Point(xy) for xy in zip(df_pontos_onibus["Longitude"], df_pontos_onibus["Latitude"])])
+		geometry_onibus = gpd.GeoSeries([Point(xy) for xy in zip(df_pontos_onibus["longitude"], df_pontos_onibus["latitude"])])
 
 		# Criar GeoDataFrames
 		gdf_residencias = gpd.GeoDataFrame(data=residencias, geometry=geometry_residencias, crs=self.EARTH_CRS)  # type: ignore
@@ -106,8 +106,8 @@ class Associador:
 		if self.linhas is None:
 			raise
 		for _, linha in self.linhas.iterrows():
-			nome_linha: str = linha.linha
-			geometria_linha = linha.geometry
+			nome_linha: str = linha.id_linha
+			geometria_linha = linha.geometria_linha
 			relacionamento[nome_linha] = set()
 			pontos_compoe_linhas_onibus = self._linestring_to_array(geometria_linha)
 			distancia = self.distancia_euclidiana(pontos_compoe_linhas_onibus, self.coords_pontos_onibus, axis=2)  # type: ignore
@@ -146,7 +146,7 @@ class Associador:
 			residencias_pontos: pd.DataFrame = self.associar_residencias_a_pontos()
 			pontos_linhas = self.associar_ponto_a_linha()
 			limite_distancia = 400
-			consolidado = {"linha": [], "distancia": [], "proporcao": []}
+			consolidado = {"id_linha": [], "distancia": [], "proporcao": []}
 			for nome_linha, pontos_onibus_linha in pontos_linhas.items():
 				distancias_associadas = residencias_pontos[residencias_pontos["ponto_onibus"].isin(pontos_onibus_linha)]
 
@@ -154,7 +154,7 @@ class Associador:
 
 				proporcao = (distancias_associadas["distancia"] < limite_distancia).mean()
 
-				consolidado["linha"].append(nome_linha)
+				consolidado["id_linha"].append(nome_linha)
 				consolidado["distancia"].append(media_distancia)
 				consolidado["proporcao"].append(proporcao)
 

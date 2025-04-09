@@ -234,19 +234,19 @@ class ClassificarIndicadores:
 		Returns:
 			pd.DataFrame: DataFrame contendo as classificações de cada linha.
 		"""
-		classificacao = {"linha": [], "I1": [], "I2": [], "I3": [], "I4": [], "I5": [], "I6": [], "I7": [], "I8": [], "I9": [], "I10": []}
+		classificacao = {"id_linha": [], "I1": [], "I2": [], "I3": [], "I4": [], "I5": [], "I6": [], "I7": [], "I8": [], "I9": [], "I10": []}
 
 		for _, linha in dados_linhas.iterrows():
-			classificacao["linha"].append(linha["linha"])
-			classificacao["I1"].append(self.porcentagem_vias_pavimentadas_pontuacao(linha["via_pavimentada"]))
+			classificacao["id_linha"].append(linha["id_linha"])
+			classificacao["I1"].append(self.porcentagem_vias_pavimentadas_pontuacao(linha["indicador_via_pavimentada"]))
 			classificacao["I2"].append(self.distancia_pontos_pontuacao(linha["distancia"]))
-			classificacao["I3"].append(self.integracao_municipal_pontuacao(linha["integracao"]))
+			classificacao["I3"].append(self.integracao_municipal_pontuacao(linha["tipo_integracao"]))
 			classificacao["I4"].append(self.pontualidade_pontuacao(linha["pontualidade"]))
 			classificacao["I5"].append(self.frequencia_atendimento_pontuacao(linha["frequencia_atendimento_pontuacao"]))
 			classificacao["I6"].append(self.cumprimento_itinerarios_pontuacao(linha["cumprimento_itinerario"]))
 			classificacao["I7"].append(self.abrangencia_rede_pontuacao(linha["proporcao"]))
-			classificacao["I8"].append(self.treinamento_capacitacao_pontuacao(linha["treinamento_motorista"]))
-			classificacao["I9"].append(self.informacao_internet_pontuacao(linha["informacao_internet"]))
+			classificacao["I8"].append(self.treinamento_capacitacao_pontuacao(linha["indicador_treinamento_motorista"]))
+			classificacao["I9"].append(self.informacao_internet_pontuacao(linha["disponibilidade_informacao"]))
 			classificacao["I10"].append(self.valor_tarifa_pontuacao(linha["valor_tarifa"]))
 
 		return pd.DataFrame(classificacao)

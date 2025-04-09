@@ -9,9 +9,9 @@ def carregar_dados(file_path: str) -> pd.DataFrame:
 
 	Returns:
 		pd.DataFrame: DataFrame processado contendo as seguintes colunas:
-			- hsstart: datetime - Horário de início
-			- hsstop: datetime - Horário de término
-			- duracao: timedelta - Duração calculada (hsstop - hsstart)
+			- horario_inicio_jornada: datetime - Horário de início
+			- horario_fim_jornada: datetime - Horário de término
+			- duracao: timedelta - Duração calculada (horario_fim_jornada - horario_inicio_jornada)
 			- data: datetime - Data inicial
 			- dataf: datetime - Data final
 			- duracao_minutos: int - Duração em minutos
@@ -19,9 +19,9 @@ def carregar_dados(file_path: str) -> pd.DataFrame:
 	df = pd.read_csv(file_path, delimiter=",")
 
 	# Conversões de datetime
-	df["hsstart"] = pd.to_datetime(df["hsstart"], format="%H:%M:%S")
-	df["hsstop"] = pd.to_datetime(df["hsstop"], format="%H:%M:%S")
-	df["duracao"] = df["hsstop"] - df["hsstart"]
+	df["horario_inicio_jornada"] = pd.to_datetime(df["horario_inicio_jornada"], format="%H:%M:%S")
+	df["horario_fim_jornada"] = pd.to_datetime(df["horario_fim_jornada"], format="%H:%M:%S")
+	df["duracao"] = df["horario_fim_jornada"] - df["horario_inicio_jornada"]
 	df["data"] = pd.to_datetime(df["data"], format="%d/%m/%Y")
 	df["dataf"] = pd.to_datetime(df["dataf"], format="%d/%m/%Y")
 	df["duracao_minutos"] = df["duracao"].dt.total_seconds() // 60
@@ -78,12 +78,12 @@ def carregar_viagens_planejadas(file_path: str) -> pd.DataFrame:
 
 	df_rastreamento_tratado = df_rastreamento.drop(colunas_desnecessarias, axis=1)
 
-	df_rastreamento_tratado[["linha", "sentido"]] = df_rastreamento_tratado["Trajeto"].str.extract(r"(\d+)\s*-\s*.*\((ida|volta)\)")
+	df_rastreamento_tratado[["id_linha", "sentido"]] = df_rastreamento_tratado["descricao_trajeto"].str.extract(r"(\d+)\s*-\s*.*\((ida|volta)\)")
 
-	df_rastreamento_tratado = df_rastreamento_tratado.drop("Trajeto", axis=1)
+	df_rastreamento_tratado = df_rastreamento_tratado.drop("descricao_trajeto", axis=1)
 	df_rastreamento_tratado.replace("-", pd.NA, inplace=True)
-	df_rastreamento_tratado["com_horario"] = df_rastreamento_tratado[["Chegada ao ponto", "Partida Real", "Chegada Real"]].notna().any(axis=1)
-	agrupado = df_rastreamento_tratado.groupby(["linha", "sentido"])["com_horario"].value_counts(normalize=False).unstack(fill_value=0)
+	df_rastreamento_tratado["com_horario"] = df_rastreamento_tratado[["chegada_planejada", "partida_real", "chegada_real"]].notna().any(axis=1)
+	agrupado = df_rastreamento_tratado.groupby(["id_linha", "sentido"])["com_horario"].value_counts(normalize=False).unstack(fill_value=0)
 
 	# # Renomeia as colunas para maior clareza
 	agrupado.columns = ["sem_horario", "com_horario"]

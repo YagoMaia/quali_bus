@@ -37,7 +37,7 @@ from shapely.geometry import LineString
 
 # Exemplo de dados fictícios de linhas de ônibus
 linhas_df = gpd.GeoDataFrame({
-    'linha': ['101', '102'],
+    'id_linha': ['101', '102'],
     'geometry': [LineString([(0, 0), (1, 1), (2, 2)]), LineString([(3, 3), (4, 4), (5, 5)])]
 })
 

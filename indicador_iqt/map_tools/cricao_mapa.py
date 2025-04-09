@@ -58,10 +58,7 @@ class MapaIQT:
 			gdf_city, style_function=lambda feature: {"fillColor": "white", "color": "black", "weight": 0.7, "fillOpacity": 0.5}, name="Bairros"
 		).add_to(map_routes)
 
-		map_routes.fit_bounds([
-			[bounds[1], bounds[0]],
-			[bounds[3], bounds[2]],
-		])
+		map_routes.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
 
 		Fullscreen().add_to(map_routes)
 
@@ -76,8 +73,8 @@ class MapaIQT:
 		Args:
 			gdf_routes (gpd.GeoDataFrame): GeoDataFrame contendo as rotas a serem adicionadas.
 				Deve conter as seguintes colunas:
-				- geometry: geometria do tipo LineString
-				- linha: nome da rota para o tooltip
+				- geometria_linha: geometria do tipo LineString
+				- id_linha: nome da rota para o tooltip
 				- iqt: índice de qualidade para determinação da cor
 
 		Returns:
@@ -104,8 +101,8 @@ class MapaIQT:
 		Args:
 			gdf_routes (gpd.GeoDataFrame): GeoDataFrame contendo as rotas a serem adicionadas.
 				Deve conter as seguintes colunas:
-				- geometry: geometria do tipo LineString
-				- linha: nome da rota para o tooltip
+				- geometria_linha: geometria do tipo LineString
+				- id_linha: nome da rota para o tooltip
 				- iqt: índice de qualidade para determinação da cor
 
 		Returns:

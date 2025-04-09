@@ -36,7 +36,7 @@ class Graficos:
 			>>> graficos.plot_boxplot_passageiros_por_rota()
 		"""
 		plt.figure(figsize=(12, 6))
-		sns.boxplot(x="qtpsg", y="linha", data=self.df, hue="linha")
+		sns.boxplot(x="qtpsg", y="id_linha", data=self.df, hue="id_linha")
 		plt.title("Distribuição de Passageiros por Rota")
 		plt.xlabel("Número de Passageiros")
 		plt.ylabel("Rotas")
@@ -57,7 +57,7 @@ class Graficos:
 			>>> graficos.plot_boxplot_valores_arrecadados_por_rota()
 		"""
 		plt.figure(figsize=(12, 6))
-		sns.boxplot(x="valor_jornada", y="linha", data=self.df, hue="linha")
+		sns.boxplot(x="valor_jornada", y="id_linha", data=self.df, hue="id_linha")
 		plt.title("Distribuição dos Valores Arrecadados por Rota")
 		plt.ylabel("Rota")
 		plt.xlabel("Valor Arrecadado")
@@ -78,7 +78,7 @@ class Graficos:
 			>>> graficos.plot_duracao_medio_por_mes()
 		"""
 		plt.figure(figsize=(12, 6))
-		sns.boxplot(x="duracao", y="linha", data=self.df, hue="linha")
+		sns.boxplot(x="duracao", y="id_linha", data=self.df, hue="id_linha")
 		plt.title("Distribuição de Tempo de Viagem")
 		plt.xlabel("Tempo de Duração")
 		plt.ylabel("Rotas")
@@ -97,7 +97,7 @@ class Graficos:
 			>>> graficos = Graficos(df)
 			>>> graficos.plot_media_passageiros_por_rota()
 		"""
-		media_passageiros = self.df.groupby("linha")["qtpsg"].mean().sort_values()
+		media_passageiros = self.df.groupby("id_linha")["qtpsg"].mean().sort_values()
 		plt.figure(figsize=(10, 6))
 		media_passageiros.plot(kind="bar", color="skyblue")
 		plt.title("Média de Passageiros por Rota")
@@ -120,7 +120,7 @@ class Graficos:
 			>>> graficos.plot_duracao_vs_valor()
 		"""
 		plt.figure(figsize=(10, 6))
-		sns.scatterplot(x="duracao", y="valor_jornada", data=self.df, hue="linha")
+		sns.scatterplot(x="duracao", y="valor_jornada", data=self.df, hue="id_linha")
 		plt.title("Duração vs Valor Arrecadado por Rota")
 		plt.xlabel("Duração da Viagem (minutos)")
 		plt.ylabel("Valor Arrecadado")
@@ -172,7 +172,7 @@ class Graficos:
 			>>> graficos.plot_barras_empilhadas()
 		"""
 		self.df["mes"] = self.df["data"].dt.to_period("M")
-		self.df_pivot = self.df.pivot_table(index="mes", columns="linha", values="qtpsg", aggfunc="sum")
+		self.df_pivot = self.df.pivot_table(index="mes", columns="id_linha", values="qtpsg", aggfunc="sum")
 		self.df_pivot.plot(kind="bar", stacked=True, figsize=(12, 6))
 		plt.title("Passageiros por Mês e Rota")
 		plt.xlabel("Mês")
@@ -199,7 +199,7 @@ class Graficos:
 			>>> graficos = Graficos(df)
 			>>> graficos.plot_area_passageiros()
 		"""
-		self.df_grouped = self.df.groupby([self.df["data"].dt.to_period("M"), "linha"])["qtpsg"].sum().unstack().fillna(0)
+		self.df_grouped = self.df.groupby([self.df["data"].dt.to_period("M"), "id_linha"])["qtpsg"].sum().unstack().fillna(0)
 		self.df_grouped.plot(kind="area", stacked=True, figsize=(12, 6))
 		plt.title("Evolução de Passageiros por Rota ao Longo do Tempo")
 		plt.xlabel("Mês")

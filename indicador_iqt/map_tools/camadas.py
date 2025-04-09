@@ -83,11 +83,11 @@ def criar_popup(line: pd.Series) -> str:
 	"""
 	popup_content = f"""
 	<div style="max-width:300px;">
-		<h4 style="margin-bottom:10px;">{line.linha}</h4>
+		<h4 style="margin-bottom:10px;">{line.id_linha}</h4>
 		<table style="width:100%; border-collapse:collapse;">
 	"""
 	for idx, value in line.items():
-		if idx != "geometry":
+		if idx != "geometria_linha":
 			value = round(value, 2) if isinstance(value, float) else value
 			popup_content += f"""
 			<tr style="border-bottom:1px solid #ddd;">
@@ -109,11 +109,11 @@ def adicionar_linha_ao_mapa(line: pd.Series, group: folium.FeatureGroup, color: 
 	"""
 	color = color if color else cor_aleatoria()
 	folium.PolyLine(
-		locations=[(lat, lon) for lon, lat, *rest in line.geometry.coords],
+		locations=[(lat, lon) for lon, lat, *rest in line.geometria_linha.coords],
 		color=color,
 		weight=2.5,
 		opacity=1,
-		tooltip=line.linha,
+		tooltip=line.id_linha,
 		popup=criar_popup(line),
 	).add_to(group)
 
