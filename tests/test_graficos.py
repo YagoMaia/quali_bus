@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import pytest
-
-from indicador_iqt.data_analysis.visualizar_graficos import Graficos
+from quali_bus.data_analysis.visualizar_graficos import Graficos
 
 
 @pytest.fixture

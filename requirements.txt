@@ -22,7 +22,7 @@ geopandas==1.0.1
 hatchling==1.27.0
 id==1.5.0
 idna==3.10
--e git+https://github.com/YagoMaia/indicador_iqt.git@e9ed9b738d72a92e948651202bcc145d308fa2e7#egg=indicador_iqt
+-e git+https://github.com/YagoMaia/quali_bus.git@e9ed9b738d72a92e948651202bcc145d308fa2e7#egg=quali_bus
 ipykernel==6.29.5
 ipython==8.32.0
 jaraco.classes==3.4.0

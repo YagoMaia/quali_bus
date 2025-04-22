@@ -2,9 +2,8 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pytest
+from quali_bus.utils.associador import Associador
 from shapely.geometry import LineString
-
-from indicador_iqt.utils.associador import Associador
 
 
 @pytest.fixture

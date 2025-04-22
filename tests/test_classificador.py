@@ -1,7 +1,6 @@
 import pandas as pd
 import pytest
-
-from indicador_iqt.data_analysis.classificar_indicadores import ClassificarIndicadores
+from quali_bus.data_analysis.classificar_indicadores import ClassificarIndicadores
 
 
 @pytest.fixture

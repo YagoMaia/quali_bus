@@ -246,7 +246,7 @@ class ClassificarIndicadores:
 			classificacao["I6"].append(self.cumprimento_itinerarios_pontuacao(linha["cumprimento_itinerario"]))
 			classificacao["I7"].append(self.abrangencia_rede_pontuacao(linha["proporcao"]))
 			classificacao["I8"].append(self.treinamento_capacitacao_pontuacao(linha["indicador_treinamento_motorista"]))
-			classificacao["I9"].append(self.informacao_internet_pontuacao(linha["disponibilidade_informacao"]))
+			classificacao["I9"].append(self.informacao_internet_pontuacao(linha["disponibilidade_informacao"].strip()))
 			classificacao["I10"].append(self.valor_tarifa_pontuacao(linha["valor_tarifa"]))
 
 		return pd.DataFrame(classificacao)

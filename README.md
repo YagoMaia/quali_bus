@@ -9,7 +9,7 @@ Esta biblioteca tem como objetivo automatizar o cálculo do **Índice de Qualida
 🔹 1. Importação da Biblioteca
 
 ```python
-from indicador_iqt import CalcularIndicadores, MapaIQT
+from quali_bus import CalcularIndicadores, MapaIQT
 ```
 
 🔹 2. Inicializando a Classe

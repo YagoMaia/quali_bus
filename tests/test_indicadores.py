@@ -1,7 +1,6 @@
 import pandas as pd
 import pytest
-
-from indicador_iqt.data_analysis.calcular_indicadores import CalcularIndicadores
+from quali_bus.data_analysis.calcular_indicadores import CalcularIndicadores
 
 
 @pytest.fixture

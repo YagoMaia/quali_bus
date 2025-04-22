@@ -1,9 +1,7 @@
 import geopandas as gpd
 import pandas as pd
 import pytest
-from shapely.geometry import Point
-
-from indicador_iqt.utils.modelos import (
+from quali_bus.utils.modelos import (
 	validar_dataframe,
 	validar_df_cumprimento,
 	validar_df_dados_linhas,
@@ -13,6 +11,7 @@ from indicador_iqt.utils.modelos import (
 	validar_pontos_onibus,
 	validar_residencias,
 )
+from shapely.geometry import Point
 
 
 def test_validar_dataframe_success():
