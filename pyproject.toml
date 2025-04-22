@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "quali_bus"
-version = "0.1.9"
+version = "0.2.0"
 description = "Automatizar o cálculo do Índice de Qualidade do Transporte (IQT). O IQT é uma métrica essencial para a análise e otimização do transporte público, considerando fatores como pontualidade, frequência de atendimento, cumprimento de itinerários e infraestrutura."
 authors = ["Yago Maia <yagohenriquev123@gmail.com>"]
 license = "Apache-2.0"

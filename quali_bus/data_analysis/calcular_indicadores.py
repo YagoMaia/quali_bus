@@ -387,5 +387,5 @@ class CalcularIndicadores:
 
 		df_matriz = df_matriz.rename(columns=mapeamento)
 
-		colunas_para_manter = ["id_linha"] + list(mapeamento.values())
+		colunas_para_manter = ["id_linha"] + list(mapeamento.values()) + ["iqt"]
 		self.matriz = df_matriz[colunas_para_manter]
