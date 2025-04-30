@@ -1,8 +1,9 @@
 import folium
 import geopandas as gpd
-from folium.plugins import Fullscreen, GroupedLayerControl
+from folium.plugins import Fullscreen, GroupedLayerControl, HeatMap
 
 from ..data_analysis.classificar_indicadores import ClassificarIndicadores
+from ..utils.associador import Associador
 from .camadas import adicionar_linha_ao_mapa, adicionar_linha_ao_mapa_sem_grupo
 
 
@@ -27,6 +28,7 @@ class MapaIQT:
 		"""
 		self.gdf_city = gdf_city
 		self.mapa = self._inicializar_mapa(self.gdf_city)
+		self.mapa_de_calor = self._inicializar_mapa(self.gdf_city)
 		self.legenda = ""
 
 	def _inicializar_mapa(self, gdf_city: gpd.GeoDataFrame) -> folium.Map:
@@ -135,3 +137,48 @@ class MapaIQT:
 		GroupedLayerControl(groups={"classificacao": listas_grupo}, collapsed=False).add_to(self.mapa)
 
 		return self.mapa
+
+	def gerar_mapa_de_calor(self, associador: Associador):
+		"""Função para gerar o mapa de calor."""
+		dados = associador.get_geodataframe_com_distancia()
+		pontos = [[row["latitude"], row["longitude"], row["distancia"]] for _, row in dados.iterrows()]
+
+		# Adicionar o HeatMap ao mapa
+		# gradient = {.1: "green", .2: "blue", .4: "yellow", .6: "orange", 1: "red"}
+		HeatMap(pontos, radius=25, blur=15, max_zoom=1).add_to(self.mapa_de_calor)
+		# legend_html = """
+		# <div style="position: fixed;
+		# 			bottom: 50px; right: 50px; width: 150px; height: 120px;
+		# 			border:2px solid grey; z-index:9999; font-size:12px;
+		# 			background-color:white;
+		# 			padding: 10px;
+		# 			border-radius: 5px;">
+		# 	<p style="margin-bottom: 5px;"><b>Intensidade</b></p>
+		# 	<div style="display: flex; flex-direction: column;">
+		# 		<div style="display: flex; align-items: center;">
+		# 			<div style="width: 20px; height: 20px; background-color: red; margin-right: 5px;"></div>
+		# 			<span>Alta (0.8-1.0)</span>
+		# 		</div>
+		# 		<div style="display: flex; align-items: center;">
+		# 			<div style="width: 20px; height: 20px; background-color: orange; margin-right: 5px;"></div>
+		# 			<span>Média-Alta (0.6-0.8)</span>
+		# 		</div>
+		# 		<div style="display: flex; align-items: center;">
+		# 			<div style="width: 20px; height: 20px; background-color: yellow; margin-right: 5px;"></div>
+		# 			<span>Média (0.4-0.6)</span>
+		# 		</div>
+		# 		<div style="display: flex; align-items: center;">
+		# 			<div style="width: 20px; height: 20px; background-color: green; margin-right: 5px;"></div>
+		# 			<span>Média-Baixa (0.2-0.4)</span>
+		# 		</div>
+		# 		<div style="display: flex; align-items: center;">
+		# 			<div style="width: 20px; height: 20px; background-color: blue; margin-right: 5px;"></div>
+		# 			<span>Baixa (0-0.2)</span>
+		# 		</div>
+		# 	</div>
+		# </div>
+		# """
+
+		# # Adicionar a legenda personalizada ao mapa
+		# self.mapa_de_calor.get_root().add_child(folium.Element(legend_html))
+		return self.mapa_de_calor
