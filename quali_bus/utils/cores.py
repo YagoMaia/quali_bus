@@ -80,3 +80,23 @@ def cor_iqt(iqt: float) -> str:
 def cor_aleatoria() -> str:
 	cor = "#{:06x}".format(randint(0, 0xFFFFFF))
 	return cor
+
+
+def gerar_cores_pasteis(n: int) -> list[str]:
+	"""
+	Gera uma lista de cores pastéis em formato hexadecimal.
+
+	Parâmetros:
+	- n (int): número de cores desejadas
+
+	Retorna:
+	- List[str]: lista com 'n' cores em formato hexadecimal
+	"""
+	cores = []
+	for _ in range(n):
+		r = randint(150, 255)
+		g = randint(150, 255)
+		b = randint(150, 255)
+		cor_hex = f"#{r:02X}{g:02X}{b:02X}"
+		cores.append(cor_hex)
+	return cores

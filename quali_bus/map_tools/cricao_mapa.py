@@ -1,9 +1,12 @@
 import folium
 import geopandas as gpd
+import matplotlib.pyplot as plt
 from folium.plugins import Fullscreen, GroupedLayerControl, HeatMap
+from matplotlib.patches import Patch
 
 from ..data_analysis.classificar_indicadores import ClassificarIndicadores
 from ..utils.associador import Associador
+from ..utils.cores import gerar_cores_pasteis
 from .camadas import adicionar_linha_ao_mapa, adicionar_linha_ao_mapa_sem_grupo
 
 
@@ -29,6 +32,8 @@ class MapaIQT:
 		self.gdf_city = gdf_city
 		self.mapa = self._inicializar_mapa(self.gdf_city)
 		self.mapa_de_calor = self._inicializar_mapa(self.gdf_city)
+		self.base_map = self._criar_mapa_base()
+		self.linhas = gpd.GeoDataFrame()
 		self.legenda = ""
 
 	def _inicializar_mapa(self, gdf_city: gpd.GeoDataFrame) -> folium.Map:
@@ -120,6 +125,7 @@ class MapaIQT:
 			>>> mapa_final.save("mapa_rotas_grupos.html")
 		"""
 		grupos = {}
+		self.linhas = gdf_routes.copy()
 		classificador = ClassificarIndicadores()
 		listas_grupo = []
 
@@ -146,39 +152,78 @@ class MapaIQT:
 		# Adicionar o HeatMap ao mapa
 		# gradient = {.1: "green", .2: "blue", .4: "yellow", .6: "orange", 1: "red"}
 		HeatMap(pontos, radius=25, blur=15, max_zoom=1).add_to(self.mapa_de_calor)
-		# legend_html = """
-		# <div style="position: fixed;
-		# 			bottom: 50px; right: 50px; width: 150px; height: 120px;
-		# 			border:2px solid grey; z-index:9999; font-size:12px;
-		# 			background-color:white;
-		# 			padding: 10px;
-		# 			border-radius: 5px;">
-		# 	<p style="margin-bottom: 5px;"><b>Intensidade</b></p>
-		# 	<div style="display: flex; flex-direction: column;">
-		# 		<div style="display: flex; align-items: center;">
-		# 			<div style="width: 20px; height: 20px; background-color: red; margin-right: 5px;"></div>
-		# 			<span>Alta (0.8-1.0)</span>
-		# 		</div>
-		# 		<div style="display: flex; align-items: center;">
-		# 			<div style="width: 20px; height: 20px; background-color: orange; margin-right: 5px;"></div>
-		# 			<span>Média-Alta (0.6-0.8)</span>
-		# 		</div>
-		# 		<div style="display: flex; align-items: center;">
-		# 			<div style="width: 20px; height: 20px; background-color: yellow; margin-right: 5px;"></div>
-		# 			<span>Média (0.4-0.6)</span>
-		# 		</div>
-		# 		<div style="display: flex; align-items: center;">
-		# 			<div style="width: 20px; height: 20px; background-color: green; margin-right: 5px;"></div>
-		# 			<span>Média-Baixa (0.2-0.4)</span>
-		# 		</div>
-		# 		<div style="display: flex; align-items: center;">
-		# 			<div style="width: 20px; height: 20px; background-color: blue; margin-right: 5px;"></div>
-		# 			<span>Baixa (0-0.2)</span>
-		# 		</div>
-		# 	</div>
-		# </div>
-		# """
 
-		# # Adicionar a legenda personalizada ao mapa
-		# self.mapa_de_calor.get_root().add_child(folium.Element(legend_html))
 		return self.mapa_de_calor
+
+	def _criar_mapa_base(self):
+		bairros = self.gdf_city.copy()
+		bounds = bairros.total_bounds
+
+		center_lat = (bounds[1] + bounds[3]) / 2
+		center_lon = (bounds[0] + bounds[2]) / 2
+
+		base_map = folium.Map(location=[center_lat, center_lon], zoom_start=12, tiles="CartoDB Voyager")
+		quantidade_bairros = bairros.shape[0]
+		cores = gerar_cores_pasteis(quantidade_bairros)
+		# bairros["cor"] = [cor_pastel() for _ in range(len(bairros))]
+
+		for index, bairro in bairros.iterrows():
+			folium.GeoJson(
+				bairro.geometry,
+				style_function=lambda x, cor=cores[index]: {"fillColor": cor, "color": "black", "weight": 0.5, "fillOpacity": 0.6},
+				tooltip=bairro.get("nome", None),
+			).add_to(base_map)
+
+		base_map.fit_bounds([[bounds[1], bounds[0]], [bounds[3], bounds[2]]])
+
+		self.grupo_dinamico = folium.FeatureGroup(name="Linha e Buffer")
+		base_map.add_child(self.grupo_dinamico)
+
+		return base_map
+
+	def mostrar_abrangencia_linha(self, id_linha: str):
+		"""
+		Mostra a abrangência de uma linha de ônibus específica no mapa.
+		"""
+		# Filtrar o GeoDataFrame para obter apenas a linha específica
+
+		# mapa = self.base_map
+
+		# self.grupo_dinamico._children.clear()
+
+		linha = self.linhas[self.linhas["id_linha"] == id_linha]
+		if linha.empty:
+			print(f"Não foi encontrada nenhuma linha com o ID {id_linha}.")
+			return
+		# Extrair a geometria da linha
+		linha_utm = linha.to_crs(epsg=31983)
+		# geometria_linha = linha.geometry.iloc[0]
+		buffer_500m = linha_utm.buffer(500)
+
+		gdf_buffer = gpd.GeoDataFrame(geometry=buffer_500m, crs="EPSG:31983").to_crs(epsg=4326)
+
+		# folium.GeoJson(linha.geometry.iloc[0], style_function=lambda x: {"color": "red", "weight": 3}, name="Linha Selecionada").add_to(
+		# 	self.grupo_dinamico
+		# )
+		# folium.GeoJson(
+		# 	buffer_500m.geometry.iloc[0], style_function=lambda x: {"color": "blue", "weight": 1, "fillColor": "blue", "fillOpacity": 0.2}
+		# ).add_to(self.grupo_dinamico)
+
+		# return self.base_map
+		fig, ax = plt.subplots(figsize=(10, 10))
+		self.gdf_city.plot(ax=ax, color="lightgray", edgecolor="black")
+		gdf_buffer.plot(ax=ax, color="blue", alpha=0.3, label="Buffer")
+		linha.plot(ax=ax, color="red", linewidth=2, label="Linha")
+
+		legend_elements = [
+			Patch(facecolor="lightgray", edgecolor="black", label="Bairros"),
+			Patch(facecolor="blue", edgecolor="blue", alpha=0.3, label="Buffer"),
+			Patch(facecolor="red", edgecolor="red", label="Linha"),
+		]
+
+		plt.legend(handles=legend_elements)
+
+		plt.title("Linha com Buffer sobre Bairros")
+		plt.axis("off")
+		plt.savefig("mapa_com_buffer.png", dpi=300)
+		plt.show()

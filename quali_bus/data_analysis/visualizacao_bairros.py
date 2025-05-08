@@ -1,35 +1,16 @@
-import random
-
 import contextily as ctx
 import geopandas as gpd
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
+from ..utils.cores import gerar_cores_pasteis
+
 
 class VisualizacaoBairros:
 	"""
 	Classe para visualizar dados de bairros e linhas de transporte público.
 	"""
-
-	def _gerar_cores(self, n: int) -> list[str]:
-		"""
-		Gera uma lista de cores pastéis em formato hexadecimal.
-
-		Parâmetros:
-		- n (int): número de cores desejadas
-
-		Retorna:
-		- List[str]: lista com 'n' cores em formato hexadecimal
-		"""
-		cores = []
-		for _ in range(n):
-			r = random.randint(150, 255)
-			g = random.randint(150, 255)
-			b = random.randint(150, 255)
-			cor_hex = f"#{r:02X}{g:02X}{b:02X}"
-			cores.append(cor_hex)
-		return cores
 
 	def distribuicao_linhas_por_bairro(self, bairros: gpd.GeoDataFrame, linestrings: gpd.GeoDataFrame) -> None:
 		"""
@@ -50,7 +31,7 @@ class VisualizacaoBairros:
 
 		agrupamento = bairros[["num_linestrings"]].groupby("num_linestrings").count()
 		num_classes = len(agrupamento)
-		colors = self._gerar_cores(num_classes)
+		colors = gerar_cores_pasteis(num_classes)
 		cmap = LinearSegmentedColormap.from_list("custom_cmap", colors)
 
 		bairros_web.plot(
