@@ -268,7 +268,7 @@ class CalcularIndicadores:
 			self.dados_completos = pd.merge(self.dados_completos, self.pontualidade, on=["id_linha"])
 			self.dados_completos = pd.merge(self.dados_completos, self.dados_geograficos, on=["id_linha"])
 
-			self.cumprimento["cumprimento_itinerario"] = self.dados_completos["km_executado"].astype(float) / self.dados_completos[
+			self.dados_completos["cumprimento_itinerario"] = self.dados_completos["km_executado"].astype(float) / self.dados_completos[
 				"distancia_km"
 			].astype(float)
 
