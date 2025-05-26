@@ -10,7 +10,7 @@ class ClassificarIndicadores:
 	infraestrutura e atendimento.
 	"""
 
-	def pontualidade_pontuacao(self, pontualidade: float) -> int:
+	def _pontualidade_pontuacao(self, pontualidade: float) -> int:
 		"""
 		Calcula a pontuação para o indicador de pontualidade.
 
@@ -29,7 +29,7 @@ class ClassificarIndicadores:
 		else:
 			return 0
 
-	def abrangencia_rede_pontuacao(self, proporcao: float) -> int:
+	def _abrangencia_rede_pontuacao(self, proporcao: float) -> int:
 		"""
 		Calcula a pontuação para o indicador de abrangência da rede de transporte.
 
@@ -48,7 +48,7 @@ class ClassificarIndicadores:
 		else:
 			return 0
 
-	def porcentagem_vias_pavimentadas_pontuacao(self, porcentagem: float) -> int:
+	def _porcentagem_vias_pavimentadas_pontuacao(self, porcentagem: float) -> int:
 		"""
 		Calcula a pontuação para o indicador de vias pavimentadas.
 
@@ -67,7 +67,7 @@ class ClassificarIndicadores:
 		else:
 			return 0
 
-	def distancia_pontos_pontuacao(self, distancia: float) -> int:
+	def _distancia_pontos_pontuacao(self, distancia: float) -> int:
 		"""
 		Calcula a pontuação para o indicador de distância entre pontos de parada.
 
@@ -86,7 +86,7 @@ class ClassificarIndicadores:
 		else:
 			return 0
 
-	def integracao_municipal_pontuacao(self, integracao: str) -> int:
+	def _integracao_municipal_pontuacao(self, integracao: str) -> int:
 		"""
 		Calcula a pontuação para o indicador de integração municipal.
 
@@ -110,7 +110,7 @@ class ClassificarIndicadores:
 			case _:
 				return 0
 
-	def frequencia_atendimento_pontuacao(self, frequencia: float) -> int:
+	def _frequencia_atendimento_pontuacao(self, frequencia: float) -> int:
 		"""
 		Calcula a pontuação para o indicador de frequência de atendimento.
 
@@ -129,7 +129,7 @@ class ClassificarIndicadores:
 		else:
 			return 0
 
-	def treinamento_capacitacao_pontuacao(self, treinamento: float) -> int:
+	def _treinamento_capacitacao_pontuacao(self, treinamento: float) -> int:
 		"""
 		Calcula a pontuação para o indicador de treinamento e capacitação.
 
@@ -167,7 +167,7 @@ class ClassificarIndicadores:
 		else:
 			return "Insuficiente"
 
-	def cumprimento_itinerarios_pontuacao(self, etinerario: float) -> int:
+	def _cumprimento_itinerarios_pontuacao(self, etinerario: float) -> int:
 		"""
 		Calcula a pontuação para o indicador de cumprimento de etinerários.
 
@@ -186,7 +186,7 @@ class ClassificarIndicadores:
 		else:
 			return 0
 
-	def informacao_internet_pontuacao(self, informacao: str) -> int:
+	def _informacao_internet_pontuacao(self, informacao: str) -> int:
 		"""Retorna a pontuação com base na atualização das informações online.
 
 		Args:
@@ -205,7 +205,7 @@ class ClassificarIndicadores:
 			case _:
 				return 0
 
-	def valor_tarifa_pontuacao(self, informacao_tarifa: str) -> int:
+	def _valor_tarifa_pontuacao(self, informacao_tarifa: str) -> int:
 		"""Retorna a pontuação com base na política de aumento da tarifa.
 
 		Args:
@@ -238,15 +238,15 @@ class ClassificarIndicadores:
 
 		for _, linha in dados_linhas.iterrows():
 			classificacao["id_linha"].append(linha["id_linha"])
-			classificacao["I1"].append(self.porcentagem_vias_pavimentadas_pontuacao(linha["indicador_via_pavimentada"]))
-			classificacao["I2"].append(self.distancia_pontos_pontuacao(linha["distancia"]))
-			classificacao["I3"].append(self.integracao_municipal_pontuacao(linha["tipo_integracao"]))
-			classificacao["I4"].append(self.pontualidade_pontuacao(linha["pontualidade"]))
-			classificacao["I5"].append(self.frequencia_atendimento_pontuacao(linha["frequencia_atendimento_pontuacao"]))
-			classificacao["I6"].append(self.cumprimento_itinerarios_pontuacao(linha["cumprimento_itinerario"]))
-			classificacao["I7"].append(self.abrangencia_rede_pontuacao(linha["proporcao"]))
-			classificacao["I8"].append(self.treinamento_capacitacao_pontuacao(linha["indicador_treinamento_motorista"]))
-			classificacao["I9"].append(self.informacao_internet_pontuacao(linha["disponibilidade_informacao"].strip()))
-			classificacao["I10"].append(self.valor_tarifa_pontuacao(linha["valor_tarifa"]))
+			classificacao["I1"].append(self._porcentagem_vias_pavimentadas_pontuacao(linha["indicador_via_pavimentada"]))
+			classificacao["I2"].append(self._distancia_pontos_pontuacao(linha["distancia"]))
+			classificacao["I3"].append(self._integracao_municipal_pontuacao(linha["tipo_integracao"]))
+			classificacao["I4"].append(self._pontualidade_pontuacao(linha["pontualidade"]))
+			classificacao["I5"].append(self._frequencia_atendimento_pontuacao(linha["frequencia_atendimento_pontuacao"]))
+			classificacao["I6"].append(self._cumprimento_itinerarios_pontuacao(linha["cumprimento_itinerario"]))
+			classificacao["I7"].append(self._abrangencia_rede_pontuacao(linha["proporcao"]))
+			classificacao["I8"].append(self._treinamento_capacitacao_pontuacao(linha["indicador_treinamento_motorista"]))
+			classificacao["I9"].append(self._informacao_internet_pontuacao(linha["disponibilidade_informacao"].strip()))
+			classificacao["I10"].append(self._valor_tarifa_pontuacao(linha["valor_tarifa"]))
 
 		return pd.DataFrame(classificacao)

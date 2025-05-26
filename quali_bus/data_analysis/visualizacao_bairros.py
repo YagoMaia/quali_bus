@@ -4,7 +4,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
-from ..utils.cores import gerar_cores_pasteis
+from ..utils.cores import GeradorCores
 
 
 class VisualizacaoBairros:
@@ -31,8 +31,8 @@ class VisualizacaoBairros:
 
 		agrupamento = bairros[["num_linestrings"]].groupby("num_linestrings").count()
 		num_classes = len(agrupamento)
-		colors = gerar_cores_pasteis(num_classes)
-		cmap = LinearSegmentedColormap.from_list("custom_cmap", colors)
+		cores = GeradorCores.gerar_cores_pasteis(num_classes)
+		cmap = LinearSegmentedColormap.from_list("custom_cmap", cores)
 
 		bairros_web.plot(
 			column="num_linestrings",
@@ -41,7 +41,7 @@ class VisualizacaoBairros:
 			scheme="quantiles",
 			k=num_classes,
 			legend=False,
-			edgecolor="black",  # <-- Adiciona borda preta
+			edgecolor="black",
 			linewidth=0.5,
 		)
 
@@ -50,11 +50,11 @@ class VisualizacaoBairros:
 		patches = []
 		for index, i in enumerate(agrupamento.iterrows()):
 			label = f"{i[0]} linestrings"
-			patches.append(mpatches.Patch(color=colors[index], label=label))
+			patches.append(mpatches.Patch(color=cores[index], label=label))
 
-		ax.legend(handles=patches, loc="lower right", title="Linestrings por Bairro", frameon=True, framealpha=0.9)
+		ax.legend(handles=patches, loc="lower right", title="Linha de Ônibus por Bairro", frameon=True, framealpha=0.9)
 
-		plt.title("Distribuição de Linestrings por Bairro", fontsize=16)
+		plt.title("Distribuição de Linhas de Ônibus por Bairro", fontsize=16)
 		plt.tight_layout()
 
 		total_linestrings = len(linestrings)
