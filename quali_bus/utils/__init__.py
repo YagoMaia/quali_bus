@@ -1,5 +1,4 @@
 from .associador import *
+from .config import *
 from .cores import *
-from .execptions import *
 from .modelos import *
-from .utils import *

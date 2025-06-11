@@ -1,4 +1,4 @@
-# 📊 Indicadores IQT - Biblioteca para Avaliação da Qualidade do Transporte Público
+# 📊 Quali Bus - Biblioteca para Avaliação da Qualidade do Transporte Público
 
 Esta biblioteca tem como objetivo automatizar o cálculo do **Índice de Qualidade do Transporte (IQT)**, baseado nos critérios estabelecidos no artigo **"MESTRADO INDICADOR DE QUALIDADE PARA AVALIAR TRANSPORTE COLETIVO URBANO"**. O IQT é uma métrica essencial para a análise e otimização do transporte público, considerando fatores como pontualidade, frequência de atendimento, cumprimento de itinerários e infraestrutura.
 

@@ -14,20 +14,7 @@ def validar_gdf_city(df: pd.DataFrame) -> bool:
 	Raises:
 		ValueError: Se alguma coluna estiver faltando no DataFrame.
 	"""
-	required_columns = [
-		"OBJECTID",
-		"Shape_Leng",
-		"Shape_Area",
-		"Nome_Polo",
-		"FID_1",
-		"Shape_Ar_1",
-		"Nome_Pol_1",
-		"RendaDomc_",
-		"Domicilios",
-		"Moradores",
-		"RendaPerca",
-		"geometry",
-	]
+	required_columns = ["geometry"]
 	missing_columns = [col for col in required_columns if col not in df.columns]
 	if missing_columns:
 		raise ValueError(f"gdf_city está faltando colunas: {missing_columns}")

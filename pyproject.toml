@@ -1,7 +1,7 @@
 
 [tool.poetry]
 name = "quali_bus"
-version = "0.2.1"
+version = "0.3.0"
 description = "Automatizar o cálculo do Índice de Qualidade do Transporte (IQT). O IQT é uma métrica essencial para a análise e otimização do transporte público, considerando fatores como pontualidade, frequência de atendimento, cumprimento de itinerários e infraestrutura."
 authors = ["Yago Maia <yagohenriquev123@gmail.com>"]
 license = "Apache-2.0"
@@ -11,17 +11,17 @@ homepage = "https://github.com/YagoMaia/quali_bus"
 repository = "https://github.com/YagoMaia/quali_bus"
 
 [tool.poetry.dependencies]
-python = ">=3.9"
-numpy = "*"
-pandas = "*"
-geopandas = "*"
-folium = "*"
-shapely = "*"
-matplotlib = "*"
-fiona = "*"
-seaborn = "*"
+python = ">=3.12, <4.0"
 contextily = "^1.6.2"
-mapclassify = "^2.8.1"
+mapclassify = "^2.9.0"
+numpy = "^2.3.0"
+pandas = "^2.3.0"
+geopandas = "^1.1.0"
+folium = "^0.19.7"
+shapely = "^2.1.1"
+matplotlib = "^3.10.3"
+fiona = "^1.10.1"
+seaborn = "^0.13.2"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "*"

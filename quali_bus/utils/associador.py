@@ -1,4 +1,3 @@
-import math
 from typing import Optional
 
 import geopandas as gpd
@@ -8,12 +7,10 @@ from shapely.geometry import LineString, Point
 
 
 class Associador:
-	EARTH_CRS = "EPSG:4326"  # WGS 84
-	# LOCAL_CRS = "EPSG:32723"  # UTM 23S para Minas Gerais
 	MAX_DISTANCE = 1000  # metros - distância máxima aceitável
 	REQUIRED_COLUMNS = {"latitude", "longitude"}
 
-	def __init__(self, pontos_onibus: pd.DataFrame, linhas: gpd.GeoDataFrame, residencias: pd.DataFrame):
+	def __init__(self, pontos_onibus: pd.DataFrame, linhas: gpd.GeoDataFrame, residencias: pd.DataFrame, init_crs: str | int, target_crs: str | int):
 		"""
 		Inicializa a classe com os dados necessários.
 
@@ -21,11 +18,10 @@ class Associador:
 			pontos_onibus (pd.DataFrame): DataFrame com coordenadas dos pontos de ônibus
 			linhas (pd.DataFrame): DataFrame com as linhas de ônibus
 			residencias (pd.DataFrame): DataFrame com coordenadas das residências
+			init_crs (str): CRS inicial dos dados geoespaciais
+			target_crs (str): CRS projetado dos dados geoespaciais
 		"""
-		# Criar GeoDataFrames e arrays NumPy
-		self.gdf_residencias, self.gdf_pontos_onibus = self._criar_geodataframes(residencias, pontos_onibus)
-		# self.gdf_residencias = self.gdf_residencias.to_crs(self.LOCAL_CRS)  # UTM 23S para Minas Gerais
-		# self.gdf_pontos_onibus = self.gdf_pontos_onibus.to_crs(self.LOCAL_CRS)
+		self.gdf_residencias, self.gdf_pontos_onibus = self._criar_geodataframes(residencias, pontos_onibus, init_crs, target_crs)
 		self.linhas = linhas.copy()
 
 		self.coords_residencias, self.coords_pontos_onibus = self._extrair_coordenadas()
@@ -43,42 +39,44 @@ class Associador:
 		Returns:
 			Tuple[np.ndarray, np.ndarray]: Arrays com coordenadas das residências e pontos de ônibus
 		"""
-		# Extrair coordenadas das residências
 		if isinstance(self.gdf_pontos_onibus, gpd.GeoDataFrame) and isinstance(self.gdf_residencias, gpd.GeoDataFrame):
-			coords_residencias = np.array([[geom.x, geom.y] for geom in self.gdf_residencias.geometry])
+			coords_residencias = np.array([[geom.centroid.x, geom.centroid.y] for geom in self.gdf_residencias.geometry])
 
-			# Extrair coordenadas dos pontos de ônibus
-			coords_pontos_onibus = np.array([[geom.x, geom.y] for geom in self.gdf_pontos_onibus.geometry])
+			coords_pontos_onibus = np.array([[geom.centroid.x, geom.centroid.y] for geom in self.gdf_pontos_onibus.geometry])
 
 			return coords_residencias, coords_pontos_onibus
 		return None, None
 
-	def _criar_geodataframes(self, df_residencias: pd.DataFrame, df_pontos_onibus: pd.DataFrame) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+	def _criar_pontos(self, df: pd.DataFrame) -> gpd.GeoSeries:
+		"""Função responsável por criar a geometria dos dados de residencias e pontos de onibus."""
+		return gpd.GeoSeries([Point(xy) for xy in zip(df["longitude"], df["latitude"])])
+
+	def _verificar_formato(self, residencias: pd.DataFrame, pontos_onibus: pd.DataFrame):
+		"""Função responsável por verificar o formato dos dados recebidos."""
+		if not self._verificar_formato_coordenadas(residencias):
+			raise ValueError("Coordenadas dos pontos de residências estão em formato incorreto!")
+
+		if not self._verificar_formato_coordenadas(pontos_onibus):
+			raise ValueError("Coordenadas dos pontos de ônibus estão em formato incorreto!")
+
+	def _formatar_geodataframes(self, data: pd.DataFrame, geometry: gpd.GeoSeries, init_crs: str | int, target_crs: str | int):
+		gdf = gpd.GeoDataFrame(data=data, geometry=geometry, crs=init_crs).to_crs(target_crs)
+		gdf.reset_index(inplace=True, names="indice")
+		return gdf
+
+	def _criar_geodataframes(
+		self, df_residencias: pd.DataFrame, df_pontos_onibus: pd.DataFrame, init_crs: str | int, target_crs: str | int
+	) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
 		"""Converte DataFrames para GeoDataFrames."""
 		residencias = df_residencias.copy()
 
-		# Normalização de coordenadas se necessário
-		if not self._verificar_formato_coordenadas(residencias):
-			print("Normalizando coordenadas das residências...")
-			residencias["longitude"] = residencias["longitude"] / 1000000
-			residencias["latitude"] = residencias["latitude"] / 1000000
-		else:
-			print("Coordenadas das residências já estão no formato correto.")
+		self._verificar_formato(residencias, df_pontos_onibus)
 
-		if not self._verificar_formato_coordenadas(df_pontos_onibus):
-			raise ValueError("Coordenadas dos pontos de ônibus estão em formato incorreto!")
+		geometry_residencias = self._criar_pontos(residencias)
+		geometry_onibus = self._criar_pontos(df_pontos_onibus)
 
-		# Criar geometrias como GeoSeries
-		geometry_residencias = gpd.GeoSeries([Point(xy) for xy in zip(residencias["longitude"], residencias["latitude"])])
-
-		geometry_onibus = gpd.GeoSeries([Point(xy) for xy in zip(df_pontos_onibus["longitude"], df_pontos_onibus["latitude"])])
-
-		# Criar GeoDataFrames
-		gdf_residencias = gpd.GeoDataFrame(data=residencias, geometry=geometry_residencias, crs=self.EARTH_CRS)  # type: ignore
-		gdf_residencias.reset_index(inplace=True, names='indice')
-
-		gdf_pontos_onibus = gpd.GeoDataFrame(data=df_pontos_onibus, geometry=geometry_onibus, crs=self.EARTH_CRS)  # type: ignore
-		gdf_pontos_onibus.reset_index(inplace=True, names='indice')
+		gdf_residencias = self._formatar_geodataframes(residencias, geometry_residencias, init_crs, target_crs)
+		gdf_pontos_onibus = self._formatar_geodataframes(df_pontos_onibus, geometry_onibus, init_crs, target_crs)
 
 		return gdf_residencias, gdf_pontos_onibus
 
@@ -86,99 +84,63 @@ class Associador:
 		"""Calcula a distância euclidiana entre dois conjuntos de coordenadas."""
 		return np.sqrt(np.sum(np.square(coord1 - coord2), axis=axis))
 
-	def _distancia_haversine(self, coord1: np.ndarray, coord2: np.ndarray) -> np.ndarray:
-		"""
-		Calcula a distância de Haversine entre dois conjuntos de coordenadas.
-
-		Parameters:
-		-----------
-		coord1 : np.ndarray
-			Array com formato (1, 2) contendo a latitude e longitude de uma residência
-		coord2 : np.ndarray
-			Array com formato (n, 2) contendo as latitudes e longitudes dos pontos de ônibus
-
-		Returns:
-		--------
-		np.ndarray
-			Array com as distâncias entre a residência e cada ponto de ônibus
-		"""
-		# Raio da Terra em metros
-		R = 6371000
-
-		# Extrair as latitudes e longitudes dos arrays
-		lat1, lon1 = coord1[0, 0], coord1[0, 1]
-		lat2, lon2 = coord2[:, 0], coord2[:, 1]
-
-		# Converter as coordenadas de graus para radianos
-		lat1, lon1 = np.radians(lat1), np.radians(lon1)
-		lat2, lon2 = np.radians(lat2), np.radians(lon2)
-
-		# Diferenças entre as coordenadas
-		dlat = lat2 - lat1
-		dlon = lon2 - lon1
-
-		# Fórmula de Haversine
-		a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
-		c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
-
-		# Distância em metros
-		distance = R * c
-		return distance
-
 	def _linestring_to_array(self, linestring: LineString):
-		"""Converte uma Linestring em um array numpy com formato [[[x1,y1]], [[x2,y2]], ...].
-
-		Parâmetros:
-		linestring (LineString): Objeto Linestring do Shapely
-
-		Retorna:
-		numpy.ndarray: Array com formato [[[x1,y1]], [[x2,y2]], ...]
-		"""
-		# Extrai as coordenadas da linestring
+		"""Converte uma Linestring em um array numpy com formato [[[x1,y1]], [[x2,y2]], ...]."""
 		coords = list(linestring.coords)
-
-		# Converte para o formato desejado
 		array = np.array([[[x, y]] for x, y in coords])
 
 		return array
 
 	def associar_ponto_a_linha(self):
 		"""Associa os pontos de ônibus as linhas de ônibus mais próximos."""
-		# {`01`: [1, 2, 3], '02': [4, 8, 10]}
-		relacionamento = {}
 		if self.linhas is None:
-			raise
+			raise ValueError("Dados de linhas de ônibus não carregados")
+		if self.coords_pontos_onibus is None:
+			raise ValueError("Coordenadas dos pontos de ônibus não carregadas")
+
+		relacionamento = {}
 		for _, linha in self.linhas.iterrows():
 			nome_linha: str = linha.id_linha
 			geometria_linha = linha.geometria_linha
-			relacionamento[nome_linha] = set()
-			pontos_compoe_linhas_onibus = self._linestring_to_array(geometria_linha)
-			distancia = self._distancia_euclidiana(pontos_compoe_linhas_onibus, self.coords_pontos_onibus, axis=2)  # type: ignore
-			relacionamento[nome_linha] = set(np.argmin(distancia, axis=1))
+
+			pontos_linha = self._linestring_to_array(geometria_linha)
+
+			distancia = self._distancia_euclidiana(pontos_linha, self.coords_pontos_onibus, axis=2)  # type: ignore
+			indices_associados = set(np.argmin(distancia, axis=1))
+			relacionamento[nome_linha] = indices_associados
 		return relacionamento
 
 	def associar_residencias_a_pontos(self) -> pd.DataFrame:
 		"""Associa as residências aos pontos de ônibus mais próximos."""
-		associacoes = {"residencia": [], "ponto_onibus": [], "distancia": []}
-		if self.coords_residencias is None or self.coords_pontos_onibus is None:
-			raise
-		for i, residencia in enumerate(self.coords_residencias):
-			distancias = self._distancia_haversine(residencia.reshape(1, -1), self.coords_pontos_onibus)
-			idx_ponto_mais_proximo = np.argmin(distancias)
-			distancia = distancias[idx_ponto_mais_proximo]
-			associacoes["residencia"].append(i)
-			associacoes["ponto_onibus"].append(idx_ponto_mais_proximo)
-			associacoes["distancia"].append(distancia)
+		if self.coords_residencias is None:
+			raise ValueError("Coordenadas das residências não carregadas")
 
-		return pd.DataFrame(associacoes)
+		if self.coords_pontos_onibus is None:
+			raise ValueError("Coordenadas dos pontos de ônibus não carregadas")
 
-	def _calcular_proporcao_distancia(self, df: pd.DataFrame, limite=400):
+		num_residencias = len(self.coords_residencias)
+
+		residencias = np.arange(num_residencias).tolist()
+		pontos_onibus = []
+		distancias = []
+
+		for _, residencia in enumerate(self.coords_residencias):
+			distancia_residencia = self._distancia_euclidiana(residencia.reshape(1, -1), self.coords_pontos_onibus)
+			idx_ponto_mais_proximo = np.argmin(distancia_residencia)
+			distancia_minima = distancia_residencia[idx_ponto_mais_proximo]
+
+			pontos_onibus.append(idx_ponto_mais_proximo)
+			distancias.append(distancia_minima)
+
+		return pd.DataFrame({"residencia": residencias, "ponto_onibus": pontos_onibus, "distancia": distancias})
+
+	def _calcular_proporcao_distancia(self, df: pd.DataFrame, limite=500):
 		total_residencias = len(df)
 		residencias_proximas = df[df["distância"] < limite].shape[0]
 		proporcao = residencias_proximas / total_residencias
 		return proporcao
 
-	def consolidar_associacoes(self) -> pd.DataFrame:
+	def consolidar_associacoes(self, limite_distancia=500) -> pd.DataFrame:
 		"""
 		Consolida todas as associações (linhas, pontos de ônibus e residências).
 
@@ -186,12 +148,26 @@ class Associador:
 			list: Lista consolidada com linha, ponto de ônibus, residência e distância.
 		"""
 		try:
-			residencias_pontos: pd.DataFrame = self.associar_residencias_a_pontos()
+			residencias_pontos = self.associar_residencias_a_pontos()
+			if residencias_pontos.empty:
+				raise ValueError("Não foi possível obter associações entre residências e pontos de ônibus")
+
 			pontos_linhas = self.associar_ponto_a_linha()
-			limite_distancia = 500
-			consolidado = {"id_linha": [], "distancia": [], "proporcao": []}
+
+			if not pontos_linhas:
+				raise ValueError("Não foi possível obter associações entre pontos de ônibus e linhas")
+
+			consolidado = {"id_linha": [], "distancia": [], "proporcao": [], "num_residencias": []}
+
 			for nome_linha, pontos_onibus_linha in pontos_linhas.items():
 				distancias_associadas = residencias_pontos[residencias_pontos["ponto_onibus"].isin(pontos_onibus_linha)]
+
+				if distancias_associadas.empty:
+					consolidado["id_linha"].append(nome_linha)
+					consolidado["distancia"].append(float("nan"))
+					consolidado["proporcao"].append(0.0)
+					consolidado["num_residencias"].append(0)
+					continue
 
 				media_distancia = distancias_associadas["distancia"].mean()
 
@@ -200,8 +176,11 @@ class Associador:
 				consolidado["id_linha"].append(nome_linha)
 				consolidado["distancia"].append(media_distancia)
 				consolidado["proporcao"].append(proporcao)
+				consolidado["num_residencias"].append(len(distancias_associadas))
 
-			return pd.DataFrame(consolidado)
+			resultado = pd.DataFrame(consolidado)
+			resultado = resultado.sort_values(by="proporcao", ascending=False)
+			return resultado
 		except Exception as e:
 			print(f"Erro ao consolidar as associações: {e}")
 			return pd.DataFrame()
@@ -219,13 +198,8 @@ class Associador:
 		"""
 		df_associacao = self.associar_residencias_a_pontos()
 
-		# Agrupa as distâncias por ponto de ônibus
-		# df_distancias = df_associacao.groupby("ponto_onibus")["distancia"].mean().reset_index().rename(columns={"distancia": "distancia_media"})
-
-		# Junta com o GeoDataFrame de pontos
 		gdf_resultado = self.gdf_residencias.reset_index().merge(df_associacao, left_index=True, right_on="residencia")
 
-		# Mantém apenas colunas desejadas
 		gdf_resultado = gdf_resultado[["latitude", "longitude", "geometry", "distancia"]]
 
 		return gdf_resultado

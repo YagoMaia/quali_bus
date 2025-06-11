@@ -2,10 +2,10 @@ import fiona
 import folium
 import geopandas as gpd
 import pandas as pd
-from shapely import wkt
-from shapely.geometry import LineString
 
-from ..utils.cores import cor_aleatoria, cor_iqt
+# from shapely import wkt
+# from shapely.geometry import LineString
+from ..utils.cores import GeradorCores
 
 
 def carregar_camadas_linhas(path_lines: str) -> gpd.GeoDataFrame:
@@ -107,7 +107,7 @@ def adicionar_linha_ao_mapa(line: pd.Series, group: folium.FeatureGroup, color: 
 		group (folium.FeatureGroup): Grupo de features do Folium onde a linha será agrupada.
 		color (str, optional): Cor da linha. Se não for fornecida, será gerada uma cor aleatória.
 	"""
-	color = color if color else cor_aleatoria()
+	color = color if color else GeradorCores.cor_aleatoria()
 	folium.PolyLine(
 		locations=[(lat, lon) for lon, lat, *rest in line.geometria_linha.coords],
 		color=color,
@@ -118,29 +118,13 @@ def adicionar_linha_ao_mapa(line: pd.Series, group: folium.FeatureGroup, color: 
 	).add_to(group)
 
 
-def adicionar_linha_ao_mapa_sem_grupo(line: pd.Series, map_routes: folium.Map) -> None:
-	"""Adiciona uma linha diretamente ao mapa Folium sem agrupamento.
+# def _coordenadas_pontos_linhas(line: gpd.GeoSeries) -> list[tuple[float, float]]:
+# 	"""Extrai as coordenadas de uma linha do tipo LineString.
 
-	Args:
-		line (pd.Series): Série contendo a geometria da linha e seus atributos.
-		map_routes (folium.Map): Objeto do mapa Folium onde a linha será adicionada.
-	"""
-	geometry = wkt.loads(line.geometry)
-	color = cor_iqt(line.iqt)
-	if isinstance(geometry, LineString):
-		locations = [(lat, lon) for lon, lat, *rest in geometry.coords]
-		folium.PolyLine(locations=locations, color=color, weight=3, opacity=1, tooltip=line.linha).add_to(map_routes)
-	else:
-		raise TypeError("A geometria fornecida não é do tipo LineString.")
+# 	Args:
+# 		line (gpd.GeoSeries): Série contendo a geometria da linha.
 
-
-def coordenadas_pontos_linhas(line: gpd.GeoSeries) -> list[tuple[float, float]]:
-	"""Extrai as coordenadas de uma linha do tipo LineString.
-
-	Args:
-		line (gpd.GeoSeries): Série contendo a geometria da linha.
-
-	Returns:
-		list[tuple[float, float]]: Lista de tuplas com as coordenadas (latitude, longitude) da linha.
-	"""
-	return [(lat, lon) for lon, lat, *rest in line.coords]
+# 	Returns:
+# 		list[tuple[float, float]]: Lista de tuplas com as coordenadas (latitude, longitude) da linha.
+# 	"""
+# 	return [(lat, lon) for lon, lat, *rest in line.coords]

@@ -40,6 +40,46 @@ class Cores:
 	CYAN = "#17becf"
 
 
+class GeradorCores:
+	"""
+	Classe para geração e manipulação de cores.
+
+	Esta classe fornece métodos para gerar cores aleatórias, cores pastéis
+	e outras utilidades relacionadas a cores.
+	"""
+
+	@staticmethod
+	def cor_aleatoria() -> str:
+		"""
+		Gera uma cor aleatória em formato hexadecimal.
+
+		Returns:
+			str: Cor aleatória em formato hexadecimal (#RRGGBB).
+		"""
+		cor = "#{:06x}".format(randint(0, 0xFFFFFF))
+		return cor
+
+	@staticmethod
+	def gerar_cores_pasteis(n: int) -> list[str]:
+		"""
+		Gera uma lista de cores pastéis em formato hexadecimal.
+
+		Args:
+			n (int): Número de cores desejadas.
+
+		Returns:
+			List[str]: Lista com 'n' cores pastéis em formato hexadecimal.
+		"""
+		cores = []
+		for _ in range(n):
+			r = randint(150, 255)
+			g = randint(150, 255)
+			b = randint(150, 255)
+			cor_hex = f"#{r:02X}{g:02X}{b:02X}"
+			cores.append(cor_hex)
+		return cores
+
+
 def cor_iqt(iqt: float) -> str:
 	"""
 	Determina a cor apropriada com base no valor do IQT (Índice de Qualidade do Transporte).
@@ -75,28 +115,3 @@ def cor_iqt(iqt: float) -> str:
 		return Cores.RED
 	else:
 		return Cores.PINK
-
-
-def cor_aleatoria() -> str:
-	cor = "#{:06x}".format(randint(0, 0xFFFFFF))
-	return cor
-
-
-def gerar_cores_pasteis(n: int) -> list[str]:
-	"""
-	Gera uma lista de cores pastéis em formato hexadecimal.
-
-	Parâmetros:
-	- n (int): número de cores desejadas
-
-	Retorna:
-	- List[str]: lista com 'n' cores em formato hexadecimal
-	"""
-	cores = []
-	for _ in range(n):
-		r = randint(150, 255)
-		g = randint(150, 255)
-		b = randint(150, 255)
-		cor_hex = f"#{r:02X}{g:02X}{b:02X}"
-		cores.append(cor_hex)
-	return cores
