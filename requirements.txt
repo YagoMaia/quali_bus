@@ -73,7 +73,7 @@ seaborn==0.13.2
 shapely==2.0.7
 six==1.17.0
 stack-data==0.6.3
-tornado==6.4.2
+tornado==6.5.1
 traitlets==5.14.3
 trove-classifiers==2025.1.15.22
 twine==6.1.0
