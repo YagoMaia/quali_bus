@@ -57,7 +57,9 @@ class QualiBus:
 			print(f"Erro ao ler {path}: {e}")
 			raise
 
-	def carregar_dados_operacionais(self, linhas_path, frequencia_path, pontualidade_path):
+	def carregar_dados_operacionais(
+		self, linhas_path, frequencia_path, pontualidade_path, init_crs: str | int = "EPSG:4326", target_crs: str | int = "EPSG:31983"
+	):
 		"""
 		Carrega os dados operacionais das linhas, frequência e pontualidade.
 
@@ -65,23 +67,27 @@ class QualiBus:
 			linhas_path (str): Caminho para o CSV de dados das linhas.
 			frequencia_path (str): Caminho para o CSV de frequência.
 			pontualidade_path (str): Caminho para o CSV de pontualidade.
+			init_crs (str): CRS inicial dos dados geoespaciais
+			target_crs (str): CRS projetado dos dados geoespaciais
 		"""
 		print("Carregando dados operacionais...")
 		df_linhas = self._carregar_csv(linhas_path)
 		df_frequencia = self._carregar_csv(frequencia_path, delimiter=",")
 		df_pontualidade = self._carregar_csv(pontualidade_path, delimiter=",")
 
-		self._indicadores.carregar_dados(df_linhas, df_frequencia, df_pontualidade)
+		self._indicadores.carregar_dados(df_linhas, df_frequencia, df_pontualidade, init_crs, target_crs)
 		self._operacional_ok = True
 		print("Dados operacionais carregados.")
 
-	def carregar_dados_geoespaciais(self, pontos_path, residencias_path):
+	def carregar_dados_geoespaciais(self, pontos_path, residencias_path, init_crs: str | int = "EPSG:4326", target_crs: str | int = "EPSG:31983"):
 		"""
 		Carrega os dados geoespaciais de pontos de ônibus e residências.
 
 		Args:
 			pontos_path (str): Caminho para o CSV de pontos de ônibus.
 			residencias_path (str): Caminho para o CSV de residências.
+			init_crs (str): CRS inicial dos dados geoespaciais
+			target_crs (str): CRS projetado dos dados geoespaciais
 		"""
 		if not self._operacional_ok:
 			raise RuntimeError("Carregue os dados operacionais primeiro.")
@@ -90,7 +96,7 @@ class QualiBus:
 		df_pontos = self._carregar_csv(pontos_path)
 		df_residencias = self._carregar_csv(residencias_path)
 
-		self._indicadores.carregar_dados_geometrias(df_pontos, df_residencias)
+		self._indicadores.carregar_dados_geometrias(df_pontos, df_residencias, init_crs, target_crs)
 		self._geo_ok = True
 		print("Dados geoespaciais carregados.")
 
@@ -192,3 +198,8 @@ class QualiBus:
 	def associador(self):
 		"""Permite acesso ao objeto Associador para análises mais detalhadas."""
 		return self._indicadores.associador if self._geo_ok else None
+
+	@property
+	def mapa(self):
+		"""Permite acesso ao objeto MapaIQT para observar a distribuição de linhas."""
+		return self._map_routes

@@ -78,11 +78,11 @@ class MapaIQT:
 			>>> mapa_final.save("mapa_rotas_grupos.html")
 		"""
 		grupos = {}
-		self.linhas = gdf_routes.copy()
+		self.linhas = gdf_routes.copy().to_crs(4326)
 		classificador = ClassificarIndicadores()
 		listas_grupo = []
 
-		for _, line in gdf_routes.iterrows():
+		for _, line in self.linhas.iterrows():
 			classificao_iqt = classificador.classificacao_iqt_pontuacao(line.iqt)
 
 			grupo = grupos.get(classificao_iqt, None)

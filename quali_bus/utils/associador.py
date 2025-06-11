@@ -7,12 +7,10 @@ from shapely.geometry import LineString, Point
 
 
 class Associador:
-	EARTH_CRS = "EPSG:4326"  # WGS 84
-	# LOCAL_CRS = "EPSG:31983"  # UTM 23S para Minas Gerais
 	MAX_DISTANCE = 1000  # metros - distância máxima aceitável
 	REQUIRED_COLUMNS = {"latitude", "longitude"}
 
-	def __init__(self, pontos_onibus: pd.DataFrame, linhas: gpd.GeoDataFrame, residencias: pd.DataFrame):
+	def __init__(self, pontos_onibus: pd.DataFrame, linhas: gpd.GeoDataFrame, residencias: pd.DataFrame, init_crs: str | int, target_crs: str | int):
 		"""
 		Inicializa a classe com os dados necessários.
 
@@ -20,8 +18,10 @@ class Associador:
 			pontos_onibus (pd.DataFrame): DataFrame com coordenadas dos pontos de ônibus
 			linhas (pd.DataFrame): DataFrame com as linhas de ônibus
 			residencias (pd.DataFrame): DataFrame com coordenadas das residências
+			init_crs (str): CRS inicial dos dados geoespaciais
+			target_crs (str): CRS projetado dos dados geoespaciais
 		"""
-		self.gdf_residencias, self.gdf_pontos_onibus = self._criar_geodataframes(residencias, pontos_onibus)
+		self.gdf_residencias, self.gdf_pontos_onibus = self._criar_geodataframes(residencias, pontos_onibus, init_crs, target_crs)
 		self.linhas = linhas.copy()
 
 		self.coords_residencias, self.coords_pontos_onibus = self._extrair_coordenadas()
@@ -59,12 +59,14 @@ class Associador:
 		if not self._verificar_formato_coordenadas(pontos_onibus):
 			raise ValueError("Coordenadas dos pontos de ônibus estão em formato incorreto!")
 
-	def _formatar_geodataframes(self, data: pd.DataFrame, geometry: gpd.GeoSeries):
-		gdf = gpd.GeoDataFrame(data=data, geometry=geometry, crs=self.EARTH_CRS)
+	def _formatar_geodataframes(self, data: pd.DataFrame, geometry: gpd.GeoSeries, init_crs: str | int, target_crs: str | int):
+		gdf = gpd.GeoDataFrame(data=data, geometry=geometry, crs=init_crs).to_crs(target_crs)
 		gdf.reset_index(inplace=True, names="indice")
 		return gdf
 
-	def _criar_geodataframes(self, df_residencias: pd.DataFrame, df_pontos_onibus: pd.DataFrame) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+	def _criar_geodataframes(
+		self, df_residencias: pd.DataFrame, df_pontos_onibus: pd.DataFrame, init_crs: str | int, target_crs: str | int
+	) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
 		"""Converte DataFrames para GeoDataFrames."""
 		residencias = df_residencias.copy()
 
@@ -73,8 +75,8 @@ class Associador:
 		geometry_residencias = self._criar_pontos(residencias)
 		geometry_onibus = self._criar_pontos(df_pontos_onibus)
 
-		gdf_residencias = self._formatar_geodataframes(residencias, geometry_residencias)
-		gdf_pontos_onibus = self._formatar_geodataframes(df_pontos_onibus, geometry_onibus)
+		gdf_residencias = self._formatar_geodataframes(residencias, geometry_residencias, init_crs, target_crs)
+		gdf_pontos_onibus = self._formatar_geodataframes(df_pontos_onibus, geometry_onibus, init_crs, target_crs)
 
 		return gdf_residencias, gdf_pontos_onibus
 

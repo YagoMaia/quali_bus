@@ -26,7 +26,9 @@ class CalcularIndicadores:
 		Inicializa a classe com os valores predefinidos dos indicadores e suas prioridades.
 		"""
 
-	def carregar_dados(self, df_linhas: pd.DataFrame, df_frequencia: pd.DataFrame, df_pontualidade: pd.DataFrame):
+	def carregar_dados(
+		self, df_linhas: pd.DataFrame, df_frequencia: pd.DataFrame, df_pontualidade: pd.DataFrame, init_crs: str | int, target_crs: str | int
+	):
 		"""Carrega todos os dados necessários para o cálculo dos indicadores.
 
 		Args:
@@ -34,28 +36,34 @@ class CalcularIndicadores:
 			df_frequencia (pd.DataFrame): DataFrame contendo os dados de frequência de atendimento.
 			df_pontualidade (pd.DataFrame): DataFrame contendo os dados de pontualidade.
 			df_cumprimento (pd.DataFrame): DataFrame contendo os dados de cumprimento de itinerário.
+			init_crs (str): CRS inicial dos dados geoespaciais
+			target_crs (str): CRS projetado dos dados geoespaciais
 		"""
-		self.dados_linhas = self.carregar_dados_linha(df_linhas)
+		self.dados_linhas = self.carregar_dados_linha(df_linhas, init_crs, target_crs)
 		self.frequencia = self.carregar_frequencia_atendimento_pontuacao(df_frequencia)
 		self.pontualidade = self.carregar_pontualidade(df_pontualidade)
 		self.cumprimento = self.carregar_cumprimento(df_pontualidade)
 
-	def carregar_dados_geometrias(self, df_pontos_onibus: pd.DataFrame, df_residencias: pd.DataFrame):
+	def carregar_dados_geometrias(self, df_pontos_onibus: pd.DataFrame, df_residencias: pd.DataFrame, init_crs: str | int, target_crs: str | int):
 		"""Carrega os dados geométricos de pontos de ônibus e residências.
 
 		Args:
 			df_pontos_onibus (pd.DataFrame): DataFrame contendo os dados dos pontos de ônibus.
 			df_residencias (pd.DataFrame): DataFrame contendo os dados das residências.
+			init_crs (str): CRS inicial dos dados geoespaciais.
+			target_crs (str): CRS projetado dos dados geoespaciais.
 		"""
-		self.associador = Associador(df_pontos_onibus, self.dados_linhas.copy(), df_residencias)
+		self.associador = Associador(df_pontos_onibus, self.dados_linhas.copy(), df_residencias, init_crs, target_crs)
 		self.dados_geograficos = self.associador.consolidar_associacoes()
 
-	def carregar_dados_linha(self, df_line: pd.DataFrame) -> gpd.GeoDataFrame:
+	def carregar_dados_linha(self, df_line: pd.DataFrame, init_crs: str | int, target_crs: str | int) -> gpd.GeoDataFrame:
 		"""
 		Carrega os dados de frequência de atendimento a partir de um DataFrame.
 
 		Args:
 			df_line (pd.DataFrame): DataFrame contendo os dados de frequência de atendimento.
+			init_crs (str): CRS inicial dos dados geoespaciais
+			target_crs (str): CRS projetado dos dados geoespaciais
 
 		Returns:
 			gpd.GeoDataFrame: GeoDataFrame com a coluna geometry convertida para LineString 2D.
@@ -70,7 +78,7 @@ class CalcularIndicadores:
 			if not self._validar_geometry_wkt(dados_linhas).all():
 				raise
 
-			return self._converter_geometry_para_linestring(dados_linhas)
+			return self._converter_geometry_para_linestring(dados_linhas, init_crs, target_crs)
 		except Exception as error:
 			print("Erro ao carregar dados de linha: ", error)
 			return gpd.GeoDataFrame()
@@ -89,7 +97,7 @@ class CalcularIndicadores:
 		return df[coluna].apply(lambda x: isinstance(x, str) and x.startswith("LINESTRING"))
 
 	def _converter_geometry_para_linestring(
-		self, df: pd.DataFrame, coluna: str = "geometria_linha", crs: Optional[str] = "EPSG:4326"
+		self, df: pd.DataFrame, init_crs: str | int, target_crs: str | int, coluna: str = "geometria_linha"
 	) -> gpd.GeoDataFrame:
 		"""
 		Converte strings WKT em objetos LineString 2D e retorna um GeoDataFrame.
@@ -97,7 +105,8 @@ class CalcularIndicadores:
 		Args:
 			df (pd.DataFrame): DataFrame contendo a coluna geometria_linha.
 			coluna (str): Nome da coluna que contém as geometrias.
-			crs (Optional[str]): Sistema de coordenadas do GeoDataFrame. Default é WGS84.
+			init_crs (str): CRS inicial dos dados geoespaciais
+			target_crs (str): CRS projetado dos dados geoespaciais
 
 		Returns:
 			gpd.GeoDataFrame: GeoDataFrame com a coluna geometria_linha convertida para LineString 2D.
@@ -131,7 +140,7 @@ class CalcularIndicadores:
 
 		df_copy = df_copy.astype({"id_linha": "string"})
 
-		gdf = gpd.GeoDataFrame(data=df_copy, geometry=coluna, crs=crs)  # type: ignore
+		gdf = gpd.GeoDataFrame(data=df_copy, geometry=coluna, crs=init_crs).to_crs(target_crs)  # type: ignore
 		return gdf
 
 	def carregar_cumprimento(self, df_cumprimento: pd.DataFrame) -> pd.DataFrame:
@@ -203,9 +212,9 @@ class CalcularIndicadores:
 				df_temp[True] = 0
 			if False not in df_temp.columns:
 				df_temp[False] = 0
-			df_temp.columns = ["sem_horario", "com_horario"]
+			df_temp.columns = ["com_horario", "sem_horario"]
 			df_temp["pontualidade"] = df_temp["com_horario"] / (df_temp["sem_horario"] + df_temp["com_horario"])
-			df_temp = df_temp.drop(["sem_horario", "com_horario"], axis=1)
+			df_temp = df_temp.drop(["com_horario", "sem_horario"], axis=1)
 
 			df_temp = df_temp.reset_index()
 
