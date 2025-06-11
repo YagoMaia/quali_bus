@@ -9,115 +9,54 @@ Esta biblioteca tem como objetivo automatizar o cálculo do **Índice de Qualida
 🔹 1. Importação da Biblioteca
 
 ```python
-from quali_bus import CalcularIndicadores, MapaIQT
+import quali_bus as iqt
 ```
 
-🔹 2. Inicializando a Classe
+🔹 2. Exemplo de uso
 
 ```python
-calc = CalcularIndicadores()
-```
+import os
+import quali_bus as iqt
 
-🔹 3. Carregando os Dados das Linhas de Ônibus
+# --- 1. Configuração de Paths ---
+# Define os diretórios base para facilitar o acesso aos arquivos.
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ARQUIVOS_DIR = os.path.join(BASE_DIR, "seus_dados", "arquivos")
+PLANILHAS_DIR = os.path.join(BASE_DIR, "seus_dados", "planilhas")
 
-Os dados podem ser carregados a partir de um `pandas.DataFrame` ou `geopandas.GeoDataFrame`:
+# Paths para os arquivos de dados
+SHAPEFILE_PATH = os.path.join(ARQUIVOS_DIR, "limites_bairros.shp")
+LINHAS_PATH = os.path.join(PLANILHAS_DIR, "dados_linhas.csv")
+FREQUENCIA_PATH = os.path.join(PLANILHAS_DIR, "frequencia.csv")
+PONTUALIDADE_PATH = os.path.join(PLANILHAS_DIR, "pontualidade.csv")
+RESIDENCIAS_PATH = os.path.join(PLANILHAS_DIR, "residencias.csv")
+PONTOS_PATH = os.path.join(PLANILHAS_DIR, "pontos_de_onibus.csv")
 
-```python
-import pandas as pd
-import geopandas as gpd
-from shapely.geometry import LineString
+# --- 2. Inicialização e Carga de Dados ---
+# Inicializa o objeto de análise, fornecendo o shapefile do município.
+analise = iqt.QualiBus(SHAPEFILE_PATH)
 
-# Exemplo de dados fictícios de linhas de ônibus
-linhas_df = gpd.GeoDataFrame({
-    'id_linha': ['101', '102'],
-    'geometria_linha': [LineString([(0, 0), (1, 1), (2, 2)]), LineString([(3, 3), (4, 4), (5, 5)])]
-})
+# Carrega os dados operacionais e geoespaciais a partir dos arquivos.
+analise.carregar_dados_operacionais(LINHAS_PATH, FREQUENCIA_PATH, PONTUALIDADE_PATH)
+analise.carregar_dados_geoespaciais(PONTOS_PATH, RESIDENCIAS_PATH)
 
-frequencia_df = pd.DataFrame({
-    'id_linha': ['101', '102'],
-    'horario_inicio_jornada': ['06:07:57', '06:07:57'],
-    'horario_fim_jornada': ['06:57:51', '06:57:57'],
-    'data_jornada': ['01/01/2024', '01/01/2024'],
-    'sentido_viagem': ['0', '1'],
-    'quantidade_passageiros': ['3', '8'],
-})
+# --- 3. Cálculo do IQT ---
+# Processa todos os dados e calcula os indicadores de qualidade.
+matriz_resultados = analise.calcular_indicadores_iqt()
+print("Matriz de Resultados IQT:")
+print(matriz_resultados)
 
-pontualidade_df = pd.DataFrame({
-    'id_linha': ['101', '102'],
-    'data_viagem': ['01/01/2024', '01/01/2024'],
-    'sentido_viagem': ['0', '1'],
-    'partida_planejada': ['06:07:00', '06:07:00'],
-    'partida_real': ['06:07:57', '06:07:57'],
-    'chegada_planejada': ['06:57:00', '06:57:00'],
-    'chegada_real': ['06:57:57', '06:57:57'],
-    'km_executado': ['31', '16'],
-})
+# --- 4. Geração de Mapas e Gráficos ---
+# Gera visualizações para análise espacial e estatística.
+mapa_iqt = analise.gerar_mapa_rotas_por_iqt()
+mapa_calor = analise.gerar_mapa_calor_acessibilidade()
+analise.gerar_mapa_abrangencia_linha("101") 
+analise.gerar_visualizacao_distribuicao_bairros()
 
-# Carregar os dados na classe
-calc.carregar_dados(linhas_df, frequencia_df, pontualidade_df)
-```
-
-🔹 4. Carregando os Dados dos Pontos (Pontos de Ônibus e Residências)
-
-Os dados podem ser carregados a partir de um `pandas.DataFrame` ou `geopandas.GeoDataFrame`:
-
-```python
-import pandas as pd
-import geopandas as gpd
-from shapely.geometry import LineString
-
-residencias = pd.DataFrame({
-    "id": [1, 2, 3]
-    "latitude" : [-41.5, -42.521321, -41.21477]
-    "longitude" : [-41.5, -42.521321, -41.21477]
-})
-
-pontos_de_onibus = pd.DataFrame({
-    "id": [1, 2, 3]
-    "latitude" : [-41.5, -42.521321, -41.21477]
-    "longitude" : [-41.5, -42.521321, -41.21477]
-})
-
-# Carregar os dados na classe
-calc.carregar_dados_geometrias(pontos_de_onibus, residencias)
-```
-
-🔹 5. Cálculo de Indicadores
-
-A biblioteca suporta o cálculo de diversos indicadores de qualidade do transporte, como:
-
-```python
-# Essa função classifica cada dado da linha segundo a classificação do IQT
-calc.classificar_linha()
-
-# Essa função diz o valor IQT para cada linha
-calc.processar_iqt()
-```
-
-🔹 6. Criação do Mapa
-
-```python
-
-import geopandas as gpd
-
-gdf_cidade = gdp.read_file(path_shapefile_cidade)
-
-# Criando o objeto do mapa
-mapa = iqt.MapaIQT(gdf_cidade)
-
-# Adicionar no mapa as linhas de ônibus já com a classificação IQT
-
-mapa.classificar_rota_grupo(calc.dados_completos)
-```
-
-🔹 7. Valores Atribuidos na Classificação
-
-```python
-
-calc.classificao_linhas # DataFrame com os dados clissificados
-
-calc.matriz # DataFrame com os dados calculcados/existentes
-
+# --- 5. Acesso aos Dados para Análise Customizada ---
+# Obtenha os DataFrames completos para análises mais profundas.
+dados_completos = analise.get_dados_completos()
+associacoes_pontos_residencias = analise.get_associacoes()
 ```
 
 ## Classificação das Linha
