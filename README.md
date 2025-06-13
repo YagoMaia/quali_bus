@@ -73,6 +73,14 @@ associacoes_pontos_residencias = analise.get_associacoes()
 | 101      | 1   | 148.12 | Integração tarifária temporal ocorre em determinados pontos, apenas com transferências intramodais | 0   | 49.8 | 1.45 | 0.98 | 1   | Possuir informações em site e aplicativo atualizados | Aumento equivalente ao índice |
 | 102      | 2   | 111.12 | Integração tarifária temporal ocorre em determinados pontos, apenas com transferências intramodais | 0   | 21.8 | 1.75 | 0.78 | 1   | Possuir informações em site e aplicativo atualizados | Aumento equivalente ao índice |
 
+## Alguns Resultados
+
+![Buffer 500 da Linha de ônibus](resultados/buffer_linha.png)
+![Distribuição Linhas de Ônibus](resultados/distribuicao_linhas_onibus.png)
+![Distribuição Linhas de Ônibus](resultados/mapa_classificacao.png)
+![Distribuição Linhas de Ônibus](resultados/dados_linha.png)
+
+
 ## 🤝 Contribuindo
 
 ### Contribuições são bem-vindas! Para contribuir:
